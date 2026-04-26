@@ -1,0 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* GroundVault Design System
+   Brand palette:
+   - forest  #1F3A2E
+   - sage    #7DA38A
+   - clay    #B47D5C
+   - sand    #E8DDC9
+   - cream   #F7F4EE
+   - graphite #1B1F1A
+   All colors must be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Surfaces */
+    --background: 41 33% 95%;          /* cream  #F7F4EE */
+    --foreground: 100 11% 11%;         /* graphite #1B1F1A */
+
+    --card: 0 0% 100%;
+    --card-foreground: 100 11% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 100 11% 11%;
+
+    /* Brand: forest is primary */
+    --primary: 148 31% 18%;            /* forest #1F3A2E */
+    --primary-foreground: 41 33% 95%;
+
+    --secondary: 39 38% 85%;           /* sand   #E8DDC9 */
+    --secondary-foreground: 148 31% 18%;
+
+    --muted: 41 28% 91%;
+    --muted-foreground: 100 6% 36%;
+
+    --accent: 134 16% 57%;             /* sage   #7DA38A */
+    --accent-foreground: 100 11% 11%;
+
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 39 22% 82%;
+    --input: 39 22% 82%;
+    --ring: 148 31% 18%;
+
+    --radius: 0.625rem;
+
+    /* Brand tokens (raw) */
+    --forest: 148 31% 18%;
+    --sage: 134 16% 57%;
+    --clay: 23 36% 53%;
+    --sand: 39 38% 85%;
+    --cream: 41 33% 95%;
+    --graphite: 100 11% 11%;
+    --verified: 134 38% 78%;           /* light pill bg */
+    --verified-foreground: 148 40% 22%;
+    --warning: 35 90% 50%;             /* amber wrong-chain */
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 100 11% 8%;
+    --foreground: 41 33% 95%;
+    --card: 100 11% 11%;
+    --card-foreground: 41 33% 95%;
+    --popover: 100 11% 11%;
+    --popover-foreground: 41 33% 95%;
+    --primary: 134 16% 57%;
+    --primary-foreground: 100 11% 11%;
+    --secondary: 148 20% 22%;
+    --secondary-foreground: 41 33% 95%;
+    --muted: 148 12% 18%;
+    --muted-foreground: 41 15% 70%;
+    --accent: 134 16% 57%;
+    --accent-foreground: 100 11% 11%;
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 41 33% 95%;
+    --border: 148 12% 22%;
+    --input: 148 12% 22%;
+    --ring: 134 16% 57%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  .font-display {
+    font-family: 'IBM Plex Serif', Georgia, serif;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .font-mono {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+}

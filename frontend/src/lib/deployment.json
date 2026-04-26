@@ -1,0 +1,106 @@
+{
+  "network": "arbitrumSepolia",
+  "chainId": 421614,
+  "deployer": "0x9Fba564bC5319101Ee373a09676f1e4857676f15",
+  "deployedAt": "2026-04-26T19:33:06.974Z",
+  "contracts": {
+    "ClaimTopicsRegistry": {
+      "address": "0x9aFaABE6eF6401E0291f0304aB09FA40a93023ad",
+      "txHash": "0xdd1f1da77fa2a8a877f729565b6f15505435b799b250013c5eff3040ca95e659",
+      "blockNumber": 263106140,
+      "constructorArgs": [
+        "0x9Fba564bC5319101Ee373a09676f1e4857676f15"
+      ]
+    },
+    "TrustedIssuersRegistry": {
+      "address": "0x6a77E01EF9AbfEdc1d138Df347A6b0210b99E51d",
+      "txHash": "0xf81296c11704f052ea2141ed6b89e0b411e803998db076c88080067b7d7b83aa",
+      "blockNumber": 263106147,
+      "constructorArgs": [
+        "0x9Fba564bC5319101Ee373a09676f1e4857676f15"
+      ]
+    },
+    "ModularCompliance": {
+      "address": "0xb27719bCe14621aeBB94a9f32E0dcFD14d7B3F56",
+      "txHash": "0x78ae4018f78676d455b76475841579876a7e671fc4cc6695df935f149fe40359",
+      "blockNumber": 263106149,
+      "constructorArgs": [
+        "0x9Fba564bC5319101Ee373a09676f1e4857676f15"
+      ]
+    },
+    "MockUSDC": {
+      "address": "0x1621127c84EFFbD1a6A4A64C79101d625a70436d",
+      "txHash": "0x62977b6a78bcdd8d7d4bf8e7db44a1e7deca13d8021b11767966bf04922cd2e6",
+      "blockNumber": 263106155,
+      "constructorArgs": [
+        "0x9Fba564bC5319101Ee373a09676f1e4857676f15"
+      ]
+    },
+    "GroundVaultRegistry": {
+      "address": "0x8D008Fd6c2CCE89A59D50aF08e1DAFCE39cb283b",
+      "txHash": "0x455bedf056a42cd2ba7689d4c2e25dc569c876a4fb587f02ac9b1dbb4fd2d9fe",
+      "blockNumber": 263106161,
+      "constructorArgs": [
+        "0x9Fba564bC5319101Ee373a09676f1e4857676f15"
+      ]
+    },
+    "IdentityRegistry": {
+      "address": "0x7985343f6e69ebeb1d83f9fb86A09dC9142E3e47",
+      "txHash": "0xd0823362b585b1fbee4651fe44fdb36123fed00f26f29e876bec0181f3490daa",
+      "blockNumber": 263106164,
+      "constructorArgs": [
+        "0x9Fba564bC5319101Ee373a09676f1e4857676f15",
+        "0x9aFaABE6eF6401E0291f0304aB09FA40a93023ad",
+        "0x6a77E01EF9AbfEdc1d138Df347A6b0210b99E51d"
+      ]
+    },
+    "cUSDC": {
+      "address": "0x9903Ab70ff715d5422C4EeA060a8aCA01D783Dcf",
+      "txHash": "0x625a99ed38013105c21b50c546b8ed63e53bd400717e1c908098d25ea0c0a607",
+      "blockNumber": 263106169,
+      "constructorArgs": [
+        "0x1621127c84EFFbD1a6A4A64C79101d625a70436d"
+      ]
+    },
+    "JurisdictionModule": {
+      "address": "0x45ce6c271392f1324293e6f1C9e35Acbb2F94AB5",
+      "txHash": "0xc9b1dcc6f0e6d88c7951a45a60c442526a583a663f7bf9cbb40302b5a4704681",
+      "blockNumber": 263106176,
+      "constructorArgs": [
+        "0x9Fba564bC5319101Ee373a09676f1e4857676f15",
+        "0x7985343f6e69ebeb1d83f9fb86A09dC9142E3e47"
+      ]
+    },
+    "GroundVaultToken": {
+      "address": "0x3DB2b965e53706Bc9EFbB2368077a12DF9fB7dbF",
+      "txHash": "0x5e562b4d03f82f5805283d548bc7c67e488de7b3b2d2639d0d19b1a481f7353c",
+      "blockNumber": 263106180,
+      "constructorArgs": [
+        "0x9Fba564bC5319101Ee373a09676f1e4857676f15",
+        "0x7985343f6e69ebeb1d83f9fb86A09dC9142E3e47",
+        "0xb27719bCe14621aeBB94a9f32E0dcFD14d7B3F56"
+      ]
+    },
+    "GroundVaultCore": {
+      "address": "0xEA5d7c081C92ca2cf6980b36269b4bDc042a5FCD",
+      "txHash": "0xa2c4cd65cbc6aab83389856e6c3b2262563914376b618b7994df5d595444c301",
+      "blockNumber": 263106181,
+      "constructorArgs": [
+        "0x9Fba564bC5319101Ee373a09676f1e4857676f15",
+        "0x7985343f6e69ebeb1d83f9fb86A09dC9142E3e47",
+        "0x3DB2b965e53706Bc9EFbB2368077a12DF9fB7dbF",
+        "0x9903Ab70ff715d5422C4EeA060a8aCA01D783Dcf",
+        "86400"
+      ]
+    },
+    "GroundVaultRouter": {
+      "address": "0xfD4068aeDb3eb5A92468970Bdf554f70720E80e9",
+      "txHash": "0x3a02e381d1c60585e64b7820da46ec9fd2710655a1bd1d927cd23248a4832a32",
+      "blockNumber": 263106188,
+      "constructorArgs": [
+        "0x3DB2b965e53706Bc9EFbB2368077a12DF9fB7dbF",
+        "0xEA5d7c081C92ca2cf6980b36269b4bDc042a5FCD"
+      ]
+    }
+  }
+}
