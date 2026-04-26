@@ -53,10 +53,11 @@ export function useDepositFlow() {
       setClaimableDeposit(claimable);
       setShareBalance(shares);
 
-      // Auto-advance the stepper based on chain state.
-      if ((shares ?? 0n) > 0n && (claimable ?? 0n) === 0n && (pending ?? 0n) === 0n) {
-        setStep("claim");
-      } else if ((claimable ?? 0n) > 0n) {
+      // Auto-advance the stepper based on chain state. Order matters —
+      // claimable first so the user lands on the actionable step rather
+      // than a "you have shares" terminal screen when there's still
+      // unfinished work in the queue.
+      if ((claimable ?? 0n) > 0n) {
         setStep("claim");
       } else if ((pending ?? 0n) > 0n) {
         setStep("pending");
