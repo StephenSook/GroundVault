@@ -46,6 +46,7 @@ Thumbs.db
 # --- claude / agent state ---
 .claude/
 .aider*
+.serena/
 
 # --- research drafts (Stephen's IP, not for public repo) ---
 research/
