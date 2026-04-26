@@ -21,7 +21,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: npm
+        # NOTE: re-add `cache: npm` once Phase 1 lands package-lock.json.
+        # setup-node@v4 with cache:npm requires the lockfile to exist.
 
       - name: Install dependencies
         run: |
