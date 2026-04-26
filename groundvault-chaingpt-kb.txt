@@ -1,0 +1,120 @@
+GroundVault — ChainGPT Knowledge Base
+Last updated: 2026-04-26
+
+================================================================
+WHAT IS GROUNDVAULT?
+================================================================
+
+GroundVault is a confidential real-world-asset (RWA) impact lending vault built for Community Land Trusts (CLTs). It is a submission to the iExec Vibe Coding Challenge (deadline 2026-05-01), deployed to Arbitrum Sepolia testnet (chain id 421614) using the iExec Nox protocol for confidential on-chain compute.
+
+Verified impact investors deposit confidential ERC-7984 tokens into a vault. The vault funds Community Land Trust acquisition of permanently affordable housing. The public sees aggregate vault health and the total number of homes funded. Nobody sees individual investor positions or the vault's available capital, so competing speculators cannot front-run housing acquisition bids the way they currently can on transparent on-chain treasuries.
+
+The named persona is Maria, a 34-year-old Executive Director of an Atlanta-area Community Land Trust who has lost affordable-housing acquisition bids to competing developers who monitored her on-chain treasury and outbid her by exactly enough to win. Maria is a composite persona; the predatory-bid pattern she represents is documented in Raymond et al. (Georgia Tech 2021), the Wired investigation of RealT in Detroit, and Atlanta Land Trust's own acquisition history.
+
+================================================================
+SMART-CONTRACT ARCHITECTURE (8 PRODUCTION CONTRACTS)
+================================================================
+
+Solidity version: 0.8.27. Compiler settings: viaIR enabled, optimizer enabled (200 runs), evmVersion cancun. All contracts deploy to Arbitrum Sepolia (chain 421614).
+
+Dependencies pinned at:
+- @iexec-nox/nox-protocol-contracts ^0.2.2 (Nox confidential type SDK)
+- @openzeppelin/contracts ^5.6.1
+- encrypted-types ^0.0.4
+
+The 8 contracts:
+
+1. Identity (ONCHAINID-shaped per ERC-3643). Holds claim attestations issued by trusted KYC issuers.
+
+2. ClaimTopicsRegistry (ERC-3643). Lists which claim topics are required for an investor to be eligible (e.g. KYC = topic 1, Reg D 506(c) accreditation = topic 7, US-resident = topic 9).
+
+3. TrustedIssuersRegistry (ERC-3643). Lists which issuer addresses are allowed to attest each claim topic.
+
+4. IdentityRegistry (ERC-3643). Maps wallet addresses to Identity contracts, enforces that every transfer is between two registered identities, and is the primary gatekeeper for ERC-7984 transfer hooks.
+
+5. ModularCompliance + JurisdictionModule (ERC-3643). The compliance contract checks every transfer against attached modules; the JurisdictionModule blocks/allows transfers based on the recipient's claimed jurisdiction.
+
+6. GroundVaultToken (ERC-7984 confidential fungible token + ERC-3643 transfer gate). Users wrap mock USDC into cUSDC via the cDeFi Wizard pattern. Balances and amounts are stored as encrypted handles (bytes32) — only the holder and addresses they ACL-grant can decrypt. The transfer hook calls IdentityRegistry.isVerified(from, to) so that only whitelisted investors can hold the token.
+
+7. GroundVaultCore. A custom confidential async deposit queue with three states: PENDING -> CLAIMABLE -> CLAIMED. ERC-7540's standard ERC-20 surface uses uint256 amounts, but ERC-7984 stores amounts as bytes32 encrypted handles, so a strict ERC-7540 inheritance is impossible. GroundVaultCore implements the ERC-7540 lifecycle adapted to encrypted types per the spec's "when applicable" clause. Pausable + ReentrancyGuard, ACL-gated balance reads, and a cancelDepositTimeout escape hatch are included.
+
+8. GroundVaultRegistry. Stores housing opportunity metadata (address, neighborhood, AMI tier, status) and anchors a hash of each ChainGPT-generated impact memo on-chain. This is the audit trail layer.
+
+A ninth contract, GroundVaultRouter, is a composability proof that demonstrates a third-party lending protocol can verify GroundVault vault health through a public read-only function without breaching any investor's privacy.
+
+================================================================
+KEY EXTERNAL FACTS THE AI MAY BE ASKED ABOUT
+================================================================
+
+Cost-burden / supply (Harvard JCHS 2024 + 2025; HUD User):
+- 22.6 million U.S. renter households are cost-burdened (record high).
+- 12.1 million are severely cost-burdened (>50 percent of income on housing).
+- HUD Worst Case Housing Needs went from 5 million to 8.5 million households over 20 years.
+- Among renters earning under $30,000 a year, 83 percent are cost-burdened and 65 percent are severely cost-burdened.
+- More than 350,000 affordable units are at risk of losing affordability by 2030 (NHPD / Grounded Solutions).
+
+Atlanta gentrification (NCRC 2025; Property Owners Alliance 2024):
+- 22,149 Black residents were displaced from 16 majority-Black Atlanta census tracts between 1980 and 2020.
+- 155 majority-Black Atlanta neighborhoods flipped majority-white in the same period.
+- Old Fourth Ward median home value rose from about $345K in 2010 to over $1.7M in 2020.
+- Average 1-bedroom rent in Atlanta rose from $1,315 (Jul 2019) to $2,098 (Jul 2024).
+- Atlanta loses about 1,500 affordable units a year (Coxe Curry, 2024).
+- The Atlanta wealth ratio is about $46 of white wealth per $1 of Black wealth (Community Foundation for Greater Atlanta).
+
+Community Land Trusts:
+- About 308 CLTs operate across 48 U.S. states (Lincoln Institute).
+- Roughly 10,000 to 15,000 CLT homeownership units and about 20,000 rental units exist nationally (PolicyLink).
+- CLT homes had foreclosure rates 80 to 90 percent lower than conventional during the 2007–2009 crisis (Lincoln Institute / Thaden 2010).
+- About 60 percent of CLT owners who sold in the past decade went on to purchase another home (Grounded Solutions).
+- CLT residents save about $153,000 in housing costs over 12 years versus market rate (Grounded Solutions).
+- The Capital Magnet Fund FY2024 was 4.3 to 8.5 times oversubscribed — $1.06B requested, $246.4M awarded (U.S. Treasury, Feb 2024).
+
+RWA market (RWA.xyz, McKinsey, Deloitte, IXS Finance):
+- About $35.9B of RWA is tokenized on-chain as of November 2025 (+131 percent year-to-date).
+- About $29B in Q1 2026 (+263 percent YoY) per InvestaX.
+- ERC-3643 alone has more than $32B of tokenized assets and 40+ tokens issued.
+- McKinsey's base case: about $2T tokenized RWA by 2030; bull case $4T.
+- Deloitte forecasts about $4T of tokenized real estate by 2035.
+- $0 of the current tokenized-RWA stock is permanent affordability housing.
+
+Predatory acquisition (Raymond et al. 2021; Wired RealT investigation; Institute for Policy Studies):
+- Eviction judgments grew about 8 percent a year from 2000 to 2016; same-site apartment sale prices rose an average of $5.5M; investor purchases caused neighborhoods to lose 166 Black residents and gain 109 White over 6 years versus controls.
+- RealT, the largest tokenization platform for U.S. residential real estate, accumulated about 500 buildings in Detroit; Detroit sued the platform in 2024 over hundreds of blight violations.
+- Blackstone holds more than 300,000 residential units globally (149K multifamily, 63K single-family, 70 mobile home parks, 144,300 student-housing beds).
+
+iExec / confidential DeFi context:
+- iExec Nox is a TEE-based confidential execution layer; testnet support on Arbitrum Sepolia launched 2025-11-04.
+- Audited by Halborn; partners include AR.IO and Aethir.
+- ERC-7984 (Confidential Fungible Token) is co-authored by OpenZeppelin and Zama, finalized July 2025.
+- ERC-7540 (Async Vault) is finalized; Centrifuge runs it in production at $500M+ AUM.
+- ERC-3643 (T-REX) is the dominant institutional security-token standard.
+
+================================================================
+THE LIVE ATLANTA ANCHOR PROPERTY
+================================================================
+
+Address: 960 Lawton Street Southwest, Atlanta, GA, in the Oakland City neighborhood.
+Operator: Atlanta Land Trust (https://atlantalandtrust.org).
+Specs: 3 bed / 2 bath, 1,326 square feet.
+List price: $250,000.
+Affordability restriction: ≤80 percent Area Median Income.
+Status: Available as of 2026-04-26 (verified directly against ALT's live "I Am Looking For A Permanently Affordable Home" listings page).
+Project context: 960 Lawton is one of 42 townhomes in the "Trust at Oakland City" mixed-income community. Half are permanently affordable (60 / 80 / 100 percent AMI mix) and half are market-rate. Co-developed by Atlanta Land Trust + Cityscape Housing + Intown Builders, with funding from the Atlanta BeltLine. Designed by Kronberg Wall Architects.
+
+In v1 of the GroundVault plan, 964 Lawton (the immediate neighbor) was the anchor. Verification on 2026-04-26 showed 964 Lawton had moved to "Under Contract." 960 Lawton replaced it as the live demo anchor.
+
+================================================================
+HOW CHAINGPT IS USED IN GROUNDVAULT
+================================================================
+
+Use case 1 — Smart Contract Auditor (Phase 3, before deploy)
+The 8 production contracts are sent through ChainGPT's Smart Contract Auditor model to identify vulnerabilities, ERC-3643 / ERC-7540 / ERC-7984 conformance gaps, and gas optimizations before any contract is deployed. Findings are addressed and the audit summary hash is anchored on-chain via GroundVaultRegistry.
+
+Use case 2 — Impact Risk Memo generator (Phase 4 dashboard)
+The Housing Opportunity Dashboard requests a plain-English Impact Risk Memo for each housing opportunity. The memo input is structured: HUD CHAS cost-burden statistics for the property's county, FRED 10-year Treasury yield as the benchmark rate, the property's metadata (address, AMI tier, list price, square footage), the operator's track record, and any known compliance constraints. ChainGPT's Web3 LLM transforms that input into a four-paragraph memo that an institutional impact investor would actually read: opportunity summary, financial benchmark, social-impact thesis, and risk caveats.
+
+================================================================
+HACKATHON FRAMING
+================================================================
+
+GroundVault is a Reg D 506(c) testnet prototype. Mainnet readiness, SEC-grade compliance, and any production deployment require qualified securities counsel and full audits. Nothing in the demo, the README, or the pitch deck claims otherwise. The project's value as a hackathon submission is that it demonstrates a working confidentiality primitive (ERC-7984 + Nox + ERC-3643 + an ERC-7540-shaped queue adapted for encrypted types) that the traditional public-chain stack cannot offer, applied to a housing-justice use case the existing $35.9B tokenized-RWA market has $0 of exposure to.
