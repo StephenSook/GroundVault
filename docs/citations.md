@@ -165,6 +165,21 @@ This deployment satisfies the iExec Vibe Coding Challenge requirement that BUIDL
 
 ---
 
+## Phase 1 pipeline-validation deploy (Counter sanity)
+
+| Item | Value |
+|---|---|
+| Contract | `Counter` (no constructor args, single counter, increments) |
+| Network | Arbitrum Sepolia (chain 421614) |
+| Address | `0xDC7dDFaa1560871E4CF54AE4Fd3839377a74fDE4` |
+| Deploy tx | `0x30a3fe13f9e7f1a6b9d499426facaaecffb4d37cef4ca6882005dd17c5b19d50` |
+| Deploy date | 2026-04-26 |
+| Arbiscan (verified) | https://sepolia.arbiscan.io/address/0xDC7dDFaa1560871E4CF54AE4Fd3839377a74fDE4#code |
+
+`Counter` is a deliberately tiny contract used as an end-to-end smoke test of the GroundVault build pipeline (Solidity 0.8.27 + viaIR + cancun, Hardhat 2.28 with toolbox v5, Arbitrum Sepolia network config, Etherscan V2 verify) before the real GroundVault contracts ship in Phase 2. It is not used by GroundVault at runtime.
+
+---
+
 ## Maria — composite persona disclosure
 
 The "Maria" character in the GroundVault pitch is a **composite persona** modeled on real Atlanta-area Community Land Trust executive directors. Specific details (lost 3 properties this year, on-chain bot front-running) compress the documented Raymond et al. + RealT Detroit + ALT Oakland City realities into a single representative narrative. No claim about a specific identifiable person is made.
