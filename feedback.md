@@ -49,9 +49,22 @@ _To be filled Apr 26-27. Topics planned to cover: ERC-7984 wrapping flow, ERC-36
 
 ---
 
-## Phase 3 — Deploy + tests
+## Phase 3 — Deploy + audit (2026-04-26)
 
-_To be filled Apr 27-28._
+### What worked
+- Single deploy-all.js script orchestrated all 11 production contracts plus 7 configuration calls in dependency-respecting order with no state issues. Total gas burned: 0.000194 ETH against the 0.04 ETH bridge budget — almost two full orders of magnitude under the estimate.
+- hardhat-verify on the Etherscan V2 unified-key syntax verified all 11 contracts on the first batch (after the V1-deprecation migration we logged in Phase 1). Zero retries needed beyond hardhat-verify's own internal backoff.
+- ChainGPT Smart Contract Auditor returned structured Critical/High/Medium/Low/Informational reports on the first call. Average response time: 13 seconds per contract. Findings caught the EXACT design tradeoffs we documented as Phase 2.6 hardening (deposit verification on GroundVaultCore, single-owner Identity, claim signature replay surface), so the auditor's signal aligns with what an external reviewer would independently surface.
+- The Nox library shipped pre-deployed on Arbitrum Sepolia at the address in Nox.sol's chainid switch, so deploy required zero address juggling — the SDK auto-resolves at runtime.
+
+### Friction points
+- ChainGPT free-tier credits ran out on the 11th audit call (GroundVaultRouter, the smallest contract). Single-call cost is opaque from the API response — no remaining-credit header, just an HTTP 400 once you exceed. Worth ChainGPT documenting credit-per-model pricing more visibly so builders can budget.
+- The Nox precompile is not deployed on the local hardhat network despite the chainid switch in Nox.sol mapping `chainid 31337 -> 0x44C00...8236`. There is no reference mock provided by `@iexec-nox/nox-protocol-contracts`, so unit tests for any contract that calls Nox can only exercise the pre-Nox revert paths. End-to-end behaviour has to be verified on Arbitrum Sepolia. This is a real friction point — a `MockNoxCompute` that ships with the package would unlock fully-local CI test coverage of the encrypted paths.
+- Deploy gas estimate (0.04 ETH for 12 contracts) was off by ~200x in the safe direction. iExec docs could publish a "typical Phase 1+3 gas budget" line so first-time builders don't over-bridge.
+
+### Open questions (raised in Discord)
+- Does iExec ship a Nox precompile mock for hardhat-network unit tests?
+- Is there a recommended pattern for confidentialTransferFrom on ERC-7984 wrappers, or is the spec deliberately leaving that flow application-specific?
 
 ### Hardhat-network confidential mock
 - _Open question: does the Nox library expose a Hardhat-network mock for unit tests, or are we required to run integration tests against Sepolia? Will document either way._
