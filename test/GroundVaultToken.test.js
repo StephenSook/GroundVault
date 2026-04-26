@@ -181,6 +181,68 @@ describe("GroundVaultToken (structural)", function () {
     });
   });
 
+  describe("confidentialMintInternal pre-Nox revert paths", function () {
+    const placeholderHandle = ethers.ZeroHash;
+
+    it("reverts when called by non-VAULT_ROLE", async function () {
+      const { other, recipient, token } = await deployVerifiedStack();
+      await expect(
+        token.connect(other).confidentialMintInternal(recipient.address, placeholderHandle),
+      ).to.be.revertedWithCustomError(token, "AccessControlUnauthorizedAccount");
+    });
+
+    it("reverts on zero-address recipient", async function () {
+      const { vault, token } = await deployVerifiedStack();
+      await expect(
+        token.connect(vault).confidentialMintInternal(ethers.ZeroAddress, placeholderHandle),
+      ).to.be.revertedWithCustomError(token, "MintToZero");
+    });
+
+    it("reverts when recipient is not verified", async function () {
+      const { vault, other, token } = await deployVerifiedStack();
+      await expect(
+        token.connect(vault).confidentialMintInternal(other.address, placeholderHandle),
+      )
+        .to.be.revertedWithCustomError(token, "RecipientNotVerified")
+        .withArgs(other.address);
+    });
+
+    it("reverts when paused", async function () {
+      const { admin, vault, recipient, token } = await deployVerifiedStack();
+      await token.connect(admin).pause();
+      await expect(
+        token.connect(vault).confidentialMintInternal(recipient.address, placeholderHandle),
+      ).to.be.revertedWithCustomError(token, "EnforcedPause");
+    });
+  });
+
+  describe("confidentialBurnInternal pre-Nox revert paths", function () {
+    const placeholderHandle = ethers.ZeroHash;
+
+    it("reverts when called by non-VAULT_ROLE", async function () {
+      const { other, user, token } = await deployVerifiedStack();
+      await expect(
+        token.connect(other).confidentialBurnInternal(user.address, placeholderHandle),
+      ).to.be.revertedWithCustomError(token, "AccessControlUnauthorizedAccount");
+    });
+
+    it("reverts on zero-address source", async function () {
+      const { vault, token } = await deployVerifiedStack();
+      await expect(
+        token.connect(vault).confidentialBurnInternal(ethers.ZeroAddress, placeholderHandle),
+      ).to.be.revertedWithCustomError(token, "BurnFromZero");
+    });
+
+    it("reverts when source is not verified", async function () {
+      const { vault, other, token } = await deployVerifiedStack();
+      await expect(
+        token.connect(vault).confidentialBurnInternal(other.address, placeholderHandle),
+      )
+        .to.be.revertedWithCustomError(token, "SenderNotVerified")
+        .withArgs(other.address);
+    });
+  });
+
   describe("confidentialBurn pre-Nox revert paths", function () {
     const placeholderHandle = ethers.ZeroHash;
     const placeholderProof = "0x";

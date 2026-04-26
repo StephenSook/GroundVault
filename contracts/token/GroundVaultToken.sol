@@ -124,9 +124,11 @@ contract GroundVaultToken is AccessControl, Pausable, ReentrancyGuard, IERC7984 
 
     // --- Vault-only mint and burn -------------------------------------
 
-    /// @notice Mint encrypted shares to `to`. Caller must hold
-    ///         {VAULT_ROLE} (the GroundVaultCore async-deposit-queue
-    ///         contract).
+    /// @notice Mint encrypted shares to `to` from a user-signed external
+    ///         input handle. Caller must hold {VAULT_ROLE}. Use this
+    ///         path when the vault is forwarding an investor-signed
+    ///         deposit (e.g. recordDeposit -> claim flow where the
+    ///         investor's proof is fresh).
     function confidentialMint(
         address to,
         externalEuint256 inputHandle,
@@ -137,6 +139,59 @@ contract GroundVaultToken is AccessControl, Pausable, ReentrancyGuard, IERC7984 
         if (!_compliance.canTransfer(address(0), to, 0)) revert ComplianceRejectedTransfer();
 
         euint256 amount = Nox.fromExternal(inputHandle, inputProof);
+        return _mint(to, amount);
+    }
+
+    /// @notice Mint encrypted shares to `to` from a contract-internal
+    ///         handle. Caller must hold {VAULT_ROLE}. Use this path
+    ///         when the vault has assembled the amount handle internally
+    ///         (e.g. via Nox.add over previously-claimable state) and
+    ///         no fresh investor proof is available. The handle MUST
+    ///         already be allowed for this contract's address.
+    function confidentialMintInternal(address to, euint256 amount)
+        external
+        whenNotPaused
+        nonReentrant
+        onlyRole(VAULT_ROLE)
+        returns (bytes32)
+    {
+        if (to == address(0)) revert MintToZero();
+        if (!_identityRegistry.isVerified(to)) revert RecipientNotVerified(to);
+        if (!_compliance.canTransfer(address(0), to, 0)) revert ComplianceRejectedTransfer();
+
+        return _mint(to, amount);
+    }
+
+    /// @notice Burn encrypted shares from `from` using a user-signed
+    ///         external input handle. Caller must hold {VAULT_ROLE}.
+    function confidentialBurn(
+        address from,
+        externalEuint256 inputHandle,
+        bytes calldata inputProof
+    ) external whenNotPaused nonReentrant onlyRole(VAULT_ROLE) returns (bytes32) {
+        if (from == address(0)) revert BurnFromZero();
+        if (!_identityRegistry.isVerified(from)) revert SenderNotVerified(from);
+
+        euint256 amount = Nox.fromExternal(inputHandle, inputProof);
+        return _burn(from, amount);
+    }
+
+    /// @notice Burn encrypted shares from `from` using a contract-
+    ///         internal handle. Caller must hold {VAULT_ROLE}.
+    function confidentialBurnInternal(address from, euint256 amount)
+        external
+        whenNotPaused
+        nonReentrant
+        onlyRole(VAULT_ROLE)
+        returns (bytes32)
+    {
+        if (from == address(0)) revert BurnFromZero();
+        if (!_identityRegistry.isVerified(from)) revert SenderNotVerified(from);
+
+        return _burn(from, amount);
+    }
+
+    function _mint(address to, euint256 amount) private returns (bytes32) {
         euint256 toBalance = _balances[to];
 
         (, euint256 newBalance, euint256 newTotalSupply) = Nox.mint(toBalance, amount, _totalSupply);
@@ -154,17 +209,7 @@ contract GroundVaultToken is AccessControl, Pausable, ReentrancyGuard, IERC7984 
         return amountHandle;
     }
 
-    /// @notice Burn encrypted shares from `from`. Caller must hold
-    ///         {VAULT_ROLE}.
-    function confidentialBurn(
-        address from,
-        externalEuint256 inputHandle,
-        bytes calldata inputProof
-    ) external whenNotPaused nonReentrant onlyRole(VAULT_ROLE) returns (bytes32) {
-        if (from == address(0)) revert BurnFromZero();
-        if (!_identityRegistry.isVerified(from)) revert SenderNotVerified(from);
-
-        euint256 amount = Nox.fromExternal(inputHandle, inputProof);
+    function _burn(address from, euint256 amount) private returns (bytes32) {
         euint256 fromBalance = _balances[from];
 
         (, euint256 newBalance, euint256 newTotalSupply) = Nox.burn(fromBalance, amount, _totalSupply);
