@@ -1,9 +1,19 @@
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Opportunity } from "@/types";
 
-export function PropertyCard({ opp }: { opp: Opportunity }) {
+export function PropertyCard({ opp }: { opp: Opportunity | null }) {
+  if (!opp) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 rounded-lg border border-border bg-card overflow-hidden">
+        <div className="aspect-[4/3] md:aspect-auto bg-muted" />
+        <div className="p-8 flex items-center justify-center text-muted-foreground gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading on-chain opportunity record…
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-0 rounded-lg border border-border bg-card overflow-hidden">
       <div className="aspect-[4/3] md:aspect-auto bg-muted overflow-hidden">
