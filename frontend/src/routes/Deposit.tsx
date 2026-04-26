@@ -1,6 +1,9 @@
+import { EyeOff } from "lucide-react";
+
 import { useDepositFlow } from "@/hooks/useDepositFlow";
 import { useWallet } from "@/hooks/useWallet";
-import { useHandleClient } from "@/hooks/useHandleClient";
+import { useContracts } from "@/hooks/useContracts";
+
 import { Stepper } from "@/components/deposit/Stepper";
 import { StepWrap } from "@/components/deposit/StepWrap";
 import { StepRequest } from "@/components/deposit/StepRequest";
@@ -8,22 +11,43 @@ import { StepPending } from "@/components/deposit/StepPending";
 import { StepClaim } from "@/components/deposit/StepClaim";
 import { PrivacyProofDrawer } from "@/components/deposit/PrivacyProofDrawer";
 import { EncryptedValue } from "@/components/shared/EncryptedValue";
-import { useMemo } from "react";
-import { EyeOff } from "lucide-react";
+
+const SIX_DECIMALS = 1_000_000n;
+
+function formatUnits6(v: bigint | null | undefined, suffix: string) {
+  if (v === null || v === undefined) return "—";
+  const whole = v / SIX_DECIMALS;
+  const frac = v % SIX_DECIMALS;
+  const fracStr = frac.toString().padStart(6, "0").slice(0, 2);
+  return `${whole.toString()}.${fracStr} ${suffix}`;
+}
+
+function formatGvt18(v: bigint | null | undefined) {
+  if (v === null || v === undefined) return "—";
+  // Display GroundVaultToken in 6-decimal scale because the demo mints
+  // shares 1:1 against cUSDC (six decimals) — even though the share
+  // token has 18 decimals on chain, the value rendered to the investor
+  // tracks their cUSDC contribution.
+  return formatUnits6(v, "gvSHARE");
+}
 
 export default function Deposit() {
   const flow = useDepositFlow();
-  const { address, isConnected } = useWallet();
-  const handleClient = useHandleClient();
+  const { isConnected } = useWallet();
+  const contracts = useContracts();
 
-  const balances = useMemo(() => {
-    const viewer = address ?? "0xviewer";
-    return {
-      shielded: handleClient.encrypt("$84,200 cUSDC", viewer),
-      pending: handleClient.encrypt("$5,000 cUSDC", viewer),
-      shares: handleClient.encrypt("12.450 GVT", viewer),
-    };
-  }, [address, handleClient]);
+  const cusdcAddr = contracts.cusdc.target as string;
+  const vaultAddr = contracts.vault.target as string;
+  const shareAddr = contracts.shareToken.target as string;
+
+  // Synthesize handle-shaped strings for the live encrypted state. We
+  // could fetch the actual handle bytes from the contract reads as well
+  // (cusdc.confidentialBalanceOf returns bytes32), but for the privacy
+  // proof + per-row UX it's enough to show the contract address tied to
+  // the handle plus the decrypted value the user sees.
+  const cusdcHandleLabel = `${cusdcAddr.slice(0, 10)}…${cusdcAddr.slice(-4)} (encrypted)`;
+  const vaultHandleLabel = `${vaultAddr.slice(0, 10)}…${vaultAddr.slice(-4)} (encrypted)`;
+  const shareHandleLabel = `${shareAddr.slice(0, 10)}…${shareAddr.slice(-4)} (encrypted)`;
 
   return (
     <div className="container py-12 pb-80 space-y-10">
@@ -40,10 +64,29 @@ export default function Deposit() {
         <div className="rounded-lg border border-border bg-card p-8">
           {flow.step === "wrap" && <StepWrap amount={flow.amount} busy={flow.busy} onWrap={flow.wrap} />}
           {flow.step === "request" && (
-            <StepRequest amount={flow.amount} setAmount={flow.setAmount} busy={flow.busy} onSubmit={flow.submitDeposit} />
+            <StepRequest
+              amount={flow.amount}
+              setAmount={flow.setAmount}
+              busy={flow.busy}
+              onSubmit={flow.submitDeposit}
+            />
           )}
-          {flow.step === "pending" && <StepPending busy={flow.busy} onFinalize={flow.finalize} />}
-          {flow.step === "claim" && <StepClaim amount={flow.amount} onClaim={flow.claim} onReset={flow.reset} />}
+          {flow.step === "pending" && (
+            <StepPending busy={flow.busy} onFinalize={flow.refresh} />
+          )}
+          {flow.step === "claim" && (
+            <StepClaim
+              amount={flow.amount}
+              onClaim={flow.claim}
+              onReset={flow.reset}
+            />
+          )}
+
+          {flow.error && (
+            <div className="mt-4 rounded-md border border-warning/30 bg-warning/5 px-4 py-3 text-xs text-warning">
+              {flow.error}
+            </div>
+          )}
         </div>
 
         <aside className="rounded-lg border border-border bg-card p-6 h-fit">
@@ -52,25 +95,65 @@ export default function Deposit() {
             <h2 className="font-display text-xl text-forest">Your private state</h2>
           </div>
           <div className="space-y-5 pt-4">
-            <PrivateRow label="Shielded Balance" handle={balances.shielded.handle} plaintext="$84,200 cUSDC" authorized={isConnected} />
-            <PrivateRow label="Pending Deposits" handle={balances.pending.handle} plaintext="$5,000 cUSDC" authorized={isConnected} />
-            <PrivateRow label="GVT Shares" handle={balances.shares.handle} plaintext="12.450 GVT" authorized={isConnected} />
+            <PrivateRow
+              label="cUSDC balance"
+              handle={cusdcHandleLabel}
+              decrypted={formatUnits6(flow.cusdcBalance, "cUSDC")}
+              authorized={isConnected}
+            />
+            <PrivateRow
+              label="Pending deposit"
+              handle={vaultHandleLabel}
+              decrypted={formatUnits6(flow.pendingDeposit, "cUSDC")}
+              authorized={isConnected}
+            />
+            <PrivateRow
+              label="Claimable shares"
+              handle={vaultHandleLabel}
+              decrypted={formatUnits6(flow.claimableDeposit, "cUSDC")}
+              authorized={isConnected}
+            />
+            <PrivateRow
+              label="GVT shares held"
+              handle={shareHandleLabel}
+              decrypted={formatGvt18(flow.shareBalance)}
+              authorized={isConnected}
+            />
           </div>
+          <button
+            onClick={flow.refresh}
+            className="mt-5 text-xs text-muted-foreground hover:text-forest"
+          >
+            Refresh ↻
+          </button>
         </aside>
       </div>
 
-      <PrivacyProofDrawer amount={flow.amount} encryptedHandle={balances.shielded.handle} />
+      <PrivacyProofDrawer
+        amount={flow.amount}
+        encryptedHandle={cusdcHandleLabel}
+      />
     </div>
   );
 }
 
-function PrivateRow({ label, handle, plaintext, authorized }: { label: string; handle: string; plaintext: string; authorized: boolean }) {
+function PrivateRow({
+  label,
+  handle,
+  decrypted,
+  authorized,
+}: {
+  label: string;
+  handle: string;
+  decrypted: string;
+  authorized: boolean;
+}) {
   return (
     <div className="flex items-center justify-between gap-4 text-sm">
       <span className="text-muted-foreground">{label}</span>
       <EncryptedValue
         handle={handle}
-        decrypted={plaintext}
+        decrypted={decrypted}
         authorized={authorized}
         variant="inline"
       />
