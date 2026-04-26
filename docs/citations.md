@@ -2,20 +2,54 @@
 
 > Every statistic in the GroundVault pitch and demo is sourced. Judges who want to verify can follow these links.
 
-This file lives in the public repository so reviewers can audit claims directly. Last updated: 2026-04-25.
+This file lives in the public repository so reviewers can audit claims directly. Last verified: 2026-04-26.
 
 ---
 
 ## Anchor property — Atlanta Land Trust, "Trust at Oakland City"
 
-**Address**: 964 Lawton St SW, Atlanta, GA 30310
-**Listed price**: $196,713
+### Primary demo anchor (Available now)
+**Address**: 960 Lawton Street Southwest, Atlanta, GA
+**Neighborhood**: Oakland City
+**Specs**: 3 bed / 2 bath, 1,326 sqft
+**List price**: $250,000
 **Restriction**: ≤80% Area Median Income (AMI)
+**Status (as of 2026-04-26)**: Available
 **Operator**: Atlanta Land Trust (ALT) — https://atlantalandtrust.org
-**Project context**: ALT closed a $14M capital campaign in late 2023 to build 90 permanently affordable units across Oakland City and East Lake; broke ground Dec 2022 on 36 townhomes (29 permanently affordable) at "The Avenue at Oakland City"
-**Source**: Atlanta Land Trust public listings + Coxe Curry "State of Affordable Housing in Atlanta" report, 2024
+**Listing source**: https://atlantalandtrust.org/get-involved/i-am-looking-for-a-permanently-affordable-home/
 
-> Note: source URL for the specific listing to be added once verified. If the listing has rotated off the public site, archive a snapshot via web.archive.org and link the snapshot here.
+### Project context — The Trust at Oakland City
+- 42-unit mixed-income townhome community, half permanently affordable (60% / 80% / 100% AMI mix), half market-rate
+- Co-developed by Atlanta Land Trust + Cityscape Housing + Intown Builders
+- Architecture: Kronberg Wall — https://www.kronbergua.com/our-portfolio/the-trust-at-oakland-city
+- Sales starting at $137,880 (smallest 1-bed); slated for completion early 2026
+- Funding announcement: https://beltline.org/press-release/atlanta-beltline-inc-closes-funding-for-permanently-affordable-homes-in-partnership-with-atlanta-land-trust-intown-builders-llc/
+- Construction coverage: https://roughdraftatlanta.com/2024/02/24/construction-begins-on-mixed-income-townhome-project-in-oakland-city/
+- Foundational coverage: https://atlantaagentmagazine.com/2022/12/06/housing-group-breaks-ground-on-permanently-affordable-townhomes-in-oakland-city/
+
+### Full ALT-listed corpus (2026-04-26 snapshot)
+
+**Available right now** (8 properties):
+
+| Address | Neighborhood | Bed/Bath | SqFt | Price | AMI |
+|---|---|---|---|---|---|
+| 697 Fayetteville Rd SE | Southeast Atlanta | 2/2.5 | 1,100 | $270,000 | 120% |
+| 1095 Tucker Ave SW | Oakland City | 3/3.5 | 1,326 | $296,000 | 100% |
+| **960 Lawton St SW** | **Oakland City** | **3/2** | **1,326** | **$250,000** | **80%** |
+| 962 Lawton St SW | Oakland City | 1/1.5 | 640 | $165,000 | 80% |
+| 1125 Cordova St SW | Southwest Atlanta | 2/2 | 896 | $199,000 | 60% |
+| 619 Griffin St NW | Northwest Atlanta | 2/2 | 990 | $165,000 | 60% |
+| 958 Lawton St SW | Oakland City | 1/1.5 | 640 | $165,000 | 80% |
+| 1091 Tucker Ave SW | Oakland City | 2/2.5 | n/a | $265,000 | 80% |
+
+**Coming soon**: 721 Fayetteville Rd SE — 2 bed townhome, ~$250-270K, 100% AMI
+
+**Under Contract** (acquisitions a CLT closed against speculative competition — frame as "what GroundVault would have funded"):
+- **964 Lawton St SW** — Oakland City, 3/2, 1,328 sqft, $225,000, 80% AMI
+- 1347 Graymont Dr SW — Southwest Atlanta, 3/2.5, 1,434 sqft, $199,000, 60% AMI
+- 760 Joseph E. Boone Blvd NW — Northwest Atlanta, 3/2.5, 1,400 sqft, $195,000, 60% AMI
+
+> Note: 964 Lawton St SW was the original anchor in v1 of this plan; verification against ALT's live listings page on 2026-04-26 showed it had moved to "Under Contract." 960 Lawton St SW (its immediate neighbor in the same Oakland City project, same 80% AMI tier) replaces it as the primary demo anchor. 964 stays in this file as a reference for the "what got bought" narrative.
 
 ---
 
@@ -120,3 +154,5 @@ This file lives in the public repository so reviewers can audit claims directly.
 ## Maria — composite persona disclosure
 
 The "Maria" character in the GroundVault pitch is a **composite persona** modeled on real Atlanta-area Community Land Trust executive directors. Specific details (lost 3 properties this year, on-chain bot front-running) compress the documented Raymond et al. + RealT Detroit + ALT Oakland City realities into a single representative narrative. No claim about a specific identifiable person is made.
+
+The "predatory bid" pattern in the pitch maps to: speculative investors monitoring nonprofit treasury wallets on a public chain, pricing-in maximum bid capacity, and outbidding by exactly enough to win. Before GroundVault, this is theoretical for CLTs (because most CLTs are not yet on-chain). After CLTs move on-chain to access global impact capital — which the $35.9B RWA market makes inevitable — the threat becomes mechanical. GroundVault is the privacy primitive built for that transition.
