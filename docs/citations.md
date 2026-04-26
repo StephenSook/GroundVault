@@ -180,6 +180,38 @@ This deployment satisfies the iExec Vibe Coding Challenge requirement that BUIDL
 
 ---
 
+## Phase 3 production deployment (Arbitrum Sepolia)
+
+All 11 production GroundVault contracts deployed to Arbitrum Sepolia (chain 421614) on 2026-04-26 by the builder wallet `0x9Fba564bC5319101Ee373a09676f1e4857676f15`. Total gas burned 0.000194 ETH. Every contract verified on Etherscan V2 — source is browseable via the Arbiscan links below.
+
+| Contract | Address | Arbiscan |
+|---|---|---|
+| ClaimTopicsRegistry | `0xeA891454B99c46843Ec9a2a8342435426eb45140` | [code](https://sepolia.arbiscan.io/address/0xeA891454B99c46843Ec9a2a8342435426eb45140#code) |
+| TrustedIssuersRegistry | `0x0b16e34f612EcE71eF173f75C14dC579669AB353` | [code](https://sepolia.arbiscan.io/address/0x0b16e34f612EcE71eF173f75C14dC579669AB353#code) |
+| ModularCompliance | `0xCfEc0c8a4Ae68ede3a6af1C85e9154f790B5684f` | [code](https://sepolia.arbiscan.io/address/0xCfEc0c8a4Ae68ede3a6af1C85e9154f790B5684f#code) |
+| MockUSDC | `0x89c1b5fa690C11d76Ca0D28a144C6094d8cCE360` | [code](https://sepolia.arbiscan.io/address/0x89c1b5fa690C11d76Ca0D28a144C6094d8cCE360#code) |
+| GroundVaultRegistry | `0xD5B8E1ef6D2472acE258a933201d48cA83EB222c` | [code](https://sepolia.arbiscan.io/address/0xD5B8E1ef6D2472acE258a933201d48cA83EB222c#code) |
+| IdentityRegistry | `0x46AAC60Fe7349E9CBa22D6d8c4EF33Bb9D6F723A` | [code](https://sepolia.arbiscan.io/address/0x46AAC60Fe7349E9CBa22D6d8c4EF33Bb9D6F723A#code) |
+| cUSDC | `0xAFC3FB5579CEA4831FBD82e08f35898a5190E3b2` | [code](https://sepolia.arbiscan.io/address/0xAFC3FB5579CEA4831FBD82e08f35898a5190E3b2#code) |
+| JurisdictionModule | `0x471e63Ed3d762782cc2bE3aD160f9981BF854a75` | [code](https://sepolia.arbiscan.io/address/0x471e63Ed3d762782cc2bE3aD160f9981BF854a75#code) |
+| GroundVaultToken | `0xFbAec40eF9E7A6BCf802845a12b27f7E9EaF2e99` | [code](https://sepolia.arbiscan.io/address/0xFbAec40eF9E7A6BCf802845a12b27f7E9EaF2e99#code) |
+| GroundVaultCore | `0x214ef3aF01304970867D70B0CA812d239F223a09` | [code](https://sepolia.arbiscan.io/address/0x214ef3aF01304970867D70B0CA812d239F223a09#code) |
+| GroundVaultRouter | `0x1D7dAd4026AF7C98E24Abfa38B2eB9ce7f9a6500` | [code](https://sepolia.arbiscan.io/address/0x1D7dAd4026AF7C98E24Abfa38B2eB9ce7f9a6500#code) |
+
+**Configuration applied during deploy** (single deploy script, all atomic):
+- KYC topic (`1`) registered on ClaimTopicsRegistry
+- Deployer wallet registered as trusted KYC issuer for the hackathon
+- ModularCompliance bound to GroundVaultToken
+- JurisdictionModule registered on ModularCompliance with US (`840`) on the country allowlist
+- GroundVaultCore granted `VAULT_ROLE` on GroundVaultToken (so the vault can mint encrypted shares to verified investors)
+- 960 Lawton St SW (Atlanta Land Trust, Oakland City, 80% AMI, $250k, status Available) recorded in GroundVaultRegistry as the anchor opportunity
+
+Per-investor `Identity` contracts are deployed at onboarding time, not as part of this batch.
+
+The full deployment manifest is committed at `deployments/arbitrumSepolia.json` in this repository.
+
+---
+
 ## Maria — composite persona disclosure
 
 The "Maria" character in the GroundVault pitch is a **composite persona** modeled on real Atlanta-area Community Land Trust executive directors. Specific details (lost 3 properties this year, on-chain bot front-running) compress the documented Raymond et al. + RealT Detroit + ALT Oakland City realities into a single representative narrative. No claim about a specific identifiable person is made.
