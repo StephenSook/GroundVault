@@ -24,9 +24,20 @@ This file documents the developer experience of building **GroundVault** with iE
 
 ---
 
-## Phase 1 — Hardhat scaffold
+## Phase 1 — Hardhat scaffold (2026-04-26 early AM)
 
-_To be filled Apr 26._
+### What worked
+- Single `npm install` resolved the entire confidential stack cleanly: `hardhat@^2.22`, `@nomicfoundation/hardhat-toolbox@^5`, `@iexec-nox/nox-protocol-contracts@0.2.2`, `@openzeppelin/contracts@^5.6.1`, `encrypted-types@^0.0.4`. No peer-dep conflicts.
+- `Nox.sol` resolves at `node_modules/@iexec-nox/nox-protocol-contracts/contracts/sdk/Nox.sol` exactly where the docs imply, so Solidity imports work without remappings.
+- `npx hardhat compile` reports "Nothing to compile" with the new config, confirming Solidity 0.8.27 + viaIR + cancun all parse cleanly even before any contract source lands.
+
+### Friction points
+- Hardhat 2.x emits a Node-version warning under Node 25 (`WARNING: You are currently using Node.js v25.2.0, which is not supported by Hardhat`). LTS is 18/20/22; pinning `.nvmrc` to 20 keeps CI deterministic, but local dev gets a warning on every command. Worth Hardhat documenting the LTS-only support window more visibly, especially as Node 25 ships with current macOS Homebrew defaults.
+- `npm install` reports 42 vulnerabilities (21 low / 14 moderate / 7 high) immediately on a fresh install, all transitive in Hardhat's tooling tree. The first-time-builder reaction is panic; the actual exposure is dev-time only and out of Hardhat's direct control. iExec quickstart could pre-empt the surprise with a one-liner: "audit warnings on initial install are inherited from upstream Hardhat tooling and do not affect compiled contract security."
+- `.gitignore` patterns needed an explicit `!.env.example` rescue line because `.env.*` matches the example file too. Worth flagging in the recommended `.gitignore` for the iExec starter so builders don't accidentally hide their own example.
+
+### Open questions (raised in Discord)
+- _(placeholder — will fill as Discord replies come back)_
 
 ---
 
