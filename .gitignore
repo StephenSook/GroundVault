@@ -1,0 +1,56 @@
+# --- node ---
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm
+.yarn
+
+# --- env / secrets ---
+.env
+.env.*
+!.env.example
+
+# --- hardhat ---
+artifacts
+cache
+typechain-types
+deployments/localhost
+deployments/hardhat
+
+# --- frontend (vite) ---
+frontend/node_modules
+frontend/dist
+frontend/.vite
+frontend/coverage
+
+# --- testing / coverage ---
+coverage
+coverage.json
+*.lcov
+
+# --- editor / os ---
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea
+*.swp
+*.swo
+*~
+
+# --- claude / agent state ---
+.claude/local
+.claude/cache
+.aider*
+
+# --- research drafts (Stephen's IP, not for public repo) ---
+research/
+
+# --- build / log ---
+*.log
+*.tsbuildinfo
+.pnp
+.pnp.js
