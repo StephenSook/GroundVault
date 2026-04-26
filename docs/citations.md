@@ -151,6 +151,20 @@ This file lives in the public repository so reviewers can audit claims directly.
 
 ---
 
+## Phase 0 deployment artifacts (BUIDL verification)
+
+| Item | Value |
+|---|---|
+| Builder wallet | `0x9Fba564bC5319101Ee373a09676f1e4857676f15` |
+| Network | Arbitrum Sepolia (chain 421614) |
+| iExec Hello World contract (`ConfidentialPiggyBank`) | `0x6827ef227Bb6f20c03942986c6EC9A23D222EAb6` |
+| Hello World deploy date | 2026-04-26 |
+| Arbiscan link | https://sepolia.arbiscan.io/address/0x6827ef227Bb6f20c03942986c6EC9A23D222EAb6 |
+
+This deployment satisfies the iExec Vibe Coding Challenge requirement that BUIDL submissions complete the Hello World tutorial before joining. Same wallet is used for all Phase 1-3 GroundVault deployments.
+
+---
+
 ## Maria — composite persona disclosure
 
 The "Maria" character in the GroundVault pitch is a **composite persona** modeled on real Atlanta-area Community Land Trust executive directors. Specific details (lost 3 properties this year, on-chain bot front-running) compress the documented Raymond et al. + RealT Detroit + ALT Oakland City realities into a single representative narrative. No claim about a specific identifiable person is made.
