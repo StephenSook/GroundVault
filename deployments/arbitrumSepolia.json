@@ -1,0 +1,106 @@
+{
+  "network": "arbitrumSepolia",
+  "chainId": 421614,
+  "deployer": "0x9Fba564bC5319101Ee373a09676f1e4857676f15",
+  "deployedAt": "2026-04-26T17:28:55.229Z",
+  "contracts": {
+    "ClaimTopicsRegistry": {
+      "address": "0xeA891454B99c46843Ec9a2a8342435426eb45140",
+      "txHash": "0xd1a9cdaebd15bc11558edae9c5a28412923eba50ee9ece4f29223b6776d4d6ab",
+      "blockNumber": 263085579,
+      "constructorArgs": [
+        "0x9Fba564bC5319101Ee373a09676f1e4857676f15"
+      ]
+    },
+    "TrustedIssuersRegistry": {
+      "address": "0x0b16e34f612EcE71eF173f75C14dC579669AB353",
+      "txHash": "0xd11fbca349fbeb92679f1ab50be7642c504b491499a585cf789208127afef4e3",
+      "blockNumber": 263085584,
+      "constructorArgs": [
+        "0x9Fba564bC5319101Ee373a09676f1e4857676f15"
+      ]
+    },
+    "ModularCompliance": {
+      "address": "0xCfEc0c8a4Ae68ede3a6af1C85e9154f790B5684f",
+      "txHash": "0x15d9c31f53f7161c0be6e56ce87d9f8b288c6e9704c42d3a5a16ad7947d0f133",
+      "blockNumber": 263085589,
+      "constructorArgs": [
+        "0x9Fba564bC5319101Ee373a09676f1e4857676f15"
+      ]
+    },
+    "MockUSDC": {
+      "address": "0x89c1b5fa690C11d76Ca0D28a144C6094d8cCE360",
+      "txHash": "0xfcaf24d1f2819a8e256c29652046224e8509f6fd9270a6fb5348a1ae57f0435b",
+      "blockNumber": 263085597,
+      "constructorArgs": [
+        "0x9Fba564bC5319101Ee373a09676f1e4857676f15"
+      ]
+    },
+    "GroundVaultRegistry": {
+      "address": "0xD5B8E1ef6D2472acE258a933201d48cA83EB222c",
+      "txHash": "0xc30b3e1e39762cad1f1e591363a8b02fd0095f179d0819f80ea9f1f92d31a55d",
+      "blockNumber": 263085603,
+      "constructorArgs": [
+        "0x9Fba564bC5319101Ee373a09676f1e4857676f15"
+      ]
+    },
+    "IdentityRegistry": {
+      "address": "0x46AAC60Fe7349E9CBa22D6d8c4EF33Bb9D6F723A",
+      "txHash": "0x6c5741278f2f634507e64b3c271cbfebb42a1888d4327f679a76e9f6eecbcb76",
+      "blockNumber": 263085611,
+      "constructorArgs": [
+        "0x9Fba564bC5319101Ee373a09676f1e4857676f15",
+        "0xeA891454B99c46843Ec9a2a8342435426eb45140",
+        "0x0b16e34f612EcE71eF173f75C14dC579669AB353"
+      ]
+    },
+    "cUSDC": {
+      "address": "0xAFC3FB5579CEA4831FBD82e08f35898a5190E3b2",
+      "txHash": "0xa9eba288a6298149bb4c7331351c563c598ad3babeb5668a90c8a1c89a1e0380",
+      "blockNumber": 263085619,
+      "constructorArgs": [
+        "0x89c1b5fa690C11d76Ca0D28a144C6094d8cCE360"
+      ]
+    },
+    "JurisdictionModule": {
+      "address": "0x471e63Ed3d762782cc2bE3aD160f9981BF854a75",
+      "txHash": "0xf3a7c0d2e5c297e09ef21d44b2c497cdba4df8da5a2920738774268ec4e9c6f1",
+      "blockNumber": 263085623,
+      "constructorArgs": [
+        "0x9Fba564bC5319101Ee373a09676f1e4857676f15",
+        "0x46AAC60Fe7349E9CBa22D6d8c4EF33Bb9D6F723A"
+      ]
+    },
+    "GroundVaultToken": {
+      "address": "0xFbAec40eF9E7A6BCf802845a12b27f7E9EaF2e99",
+      "txHash": "0x74abc16bd7ac158e8ba72a4a5a799891bca6db7ac793e5ce9c85d3f61dbb2113",
+      "blockNumber": 263085630,
+      "constructorArgs": [
+        "0x9Fba564bC5319101Ee373a09676f1e4857676f15",
+        "0x46AAC60Fe7349E9CBa22D6d8c4EF33Bb9D6F723A",
+        "0xCfEc0c8a4Ae68ede3a6af1C85e9154f790B5684f"
+      ]
+    },
+    "GroundVaultCore": {
+      "address": "0x214ef3aF01304970867D70B0CA812d239F223a09",
+      "txHash": "0x33a26825380b6dfc89b2576d5acdc073c6dd2ccb847c895231b6a3b39ede21b7",
+      "blockNumber": 263085634,
+      "constructorArgs": [
+        "0x9Fba564bC5319101Ee373a09676f1e4857676f15",
+        "0x46AAC60Fe7349E9CBa22D6d8c4EF33Bb9D6F723A",
+        "0xFbAec40eF9E7A6BCf802845a12b27f7E9EaF2e99",
+        "0xAFC3FB5579CEA4831FBD82e08f35898a5190E3b2",
+        "86400"
+      ]
+    },
+    "GroundVaultRouter": {
+      "address": "0x1D7dAd4026AF7C98E24Abfa38B2eB9ce7f9a6500",
+      "txHash": "0x01ab489b37721b78804a8e9e6d6aa454e8729c6d7c7d01e25b28da6119c5bc1d",
+      "blockNumber": 263085638,
+      "constructorArgs": [
+        "0xFbAec40eF9E7A6BCf802845a12b27f7E9EaF2e99",
+        "0x214ef3aF01304970867D70B0CA812d239F223a09"
+      ]
+    }
+  }
+}
