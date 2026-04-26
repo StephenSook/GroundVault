@@ -164,6 +164,10 @@ contract GroundVaultToken is AccessControl, Pausable, ReentrancyGuard, IERC7984 
 
     /// @notice Burn encrypted shares from `from` using a user-signed
     ///         external input handle. Caller must hold {VAULT_ROLE}.
+    /// @dev    Burn is treated as transfer-to-zero per ERC-3643, so the
+    ///         compliance.canTransfer pre-check is invoked. Modules
+    ///         that track per-investor holdings (or apply burn-rate
+    ///         limits in the future) get a chance to veto.
     function confidentialBurn(
         address from,
         externalEuint256 inputHandle,
@@ -171,6 +175,7 @@ contract GroundVaultToken is AccessControl, Pausable, ReentrancyGuard, IERC7984 
     ) external whenNotPaused nonReentrant onlyRole(VAULT_ROLE) returns (bytes32) {
         if (from == address(0)) revert BurnFromZero();
         if (!_identityRegistry.isVerified(from)) revert SenderNotVerified(from);
+        if (!_compliance.canTransfer(from, address(0), 0)) revert ComplianceRejectedTransfer();
 
         euint256 amount = Nox.fromExternal(inputHandle, inputProof);
         return _burn(from, amount);
@@ -178,6 +183,10 @@ contract GroundVaultToken is AccessControl, Pausable, ReentrancyGuard, IERC7984 
 
     /// @notice Burn encrypted shares from `from` using a contract-
     ///         internal handle. Caller must hold {VAULT_ROLE}.
+    /// @dev    Same compliance pre-check as confidentialBurn. The
+    ///         compliance.canTransfer call passes amount = 0 because
+    ///         the token's balances are encrypted (per the contract-
+    ///         level NatSpec).
     function confidentialBurnInternal(address from, euint256 amount)
         external
         whenNotPaused
@@ -187,6 +196,7 @@ contract GroundVaultToken is AccessControl, Pausable, ReentrancyGuard, IERC7984 
     {
         if (from == address(0)) revert BurnFromZero();
         if (!_identityRegistry.isVerified(from)) revert SenderNotVerified(from);
+        if (!_compliance.canTransfer(from, address(0), 0)) revert ComplianceRejectedTransfer();
 
         return _burn(from, amount);
     }

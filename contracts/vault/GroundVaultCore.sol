@@ -170,6 +170,14 @@ contract GroundVaultCore is AccessControl, Pausable, ReentrancyGuard {
     ///         cUSDC.confidentialTransfer(this, amount, proof) in a
     ///         prior transaction; this call commits the encrypted
     ///         amount to the vault's pending state.
+    /// @dev    Hackathon-scope trust assumption per the contract-level
+    ///         NatSpec: this function does NOT verify the prior cUSDC
+    ///         transfer happened. `createdAt` is anchored to the FIRST
+    ///         pending entry — subsequent deposits within the same
+    ///         pending cycle accumulate via Nox.add but do NOT reset
+    ///         the timeout window, preventing a user from looping
+    ///         zero-amount recordDeposit calls to indefinitely extend
+    ///         the cancel-after-timeout window.
     function recordDeposit(externalEuint256 inputHandle, bytes calldata inputProof)
         external
         whenNotPaused
@@ -184,7 +192,9 @@ contract GroundVaultCore is AccessControl, Pausable, ReentrancyGuard {
         euint256 newPending = Nox.add(req.pending, amount);
 
         req.pending = newPending;
-        req.createdAt = uint64(block.timestamp);
+        if (req.createdAt == 0) {
+            req.createdAt = uint64(block.timestamp);
+        }
 
         Nox.allowThis(newPending);
         Nox.allow(newPending, msg.sender);
@@ -196,6 +206,16 @@ contract GroundVaultCore is AccessControl, Pausable, ReentrancyGuard {
     /// @notice Move a controller's pending state to claimable. Operator-
     ///         only. Uses 1:1 share ratio for the hackathon; NAV-based
     ///         pricing is the Phase 2.6 stretch.
+    /// @dev    Persistently ACL-grants the new claimable handle to the
+    ///         share token in addition to the controller. claimDeposit
+    ///         relies on the share token being able to read this handle
+    ///         from inside its own call frame; using Nox.allow here
+    ///         (rather than only Nox.allowTransient at claim time)
+    ///         removes any reliance on transient-ACL semantics across
+    ///         the cross-contract call.
+    /// @dev    Also resets `createdAt` so the next pending cycle (if any)
+    ///         starts a fresh timeout anchor. Critical pairing with
+    ///         recordDeposit's "only set if zero" rule.
     function processDeposit(address controller) external whenNotPaused onlyRole(OPERATOR_ROLE) {
         DepositRequest storage req = _deposits[controller];
 
@@ -204,9 +224,11 @@ contract GroundVaultCore is AccessControl, Pausable, ReentrancyGuard {
 
         req.claimable = newClaimable;
         req.pending = zero;
+        req.createdAt = 0;
 
         Nox.allowThis(newClaimable);
         Nox.allow(newClaimable, controller);
+        Nox.allow(newClaimable, address(_shareToken));
         Nox.allowThis(zero);
 
         emit DepositProcessed(controller, euint256.unwrap(newClaimable));

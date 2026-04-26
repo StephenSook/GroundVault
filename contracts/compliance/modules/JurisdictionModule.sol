@@ -36,6 +36,7 @@ contract JurisdictionModule is Ownable2Step, IModule {
     error ZeroAddressIdentityRegistry();
     error CountryAlreadyAllowed(uint16 country);
     error CountryNotAllowed(uint16 country);
+    error UnauthorizedComplianceBinding(address caller, address compliance);
 
     event IdentityRegistrySet(IIdentityRegistry indexed registry);
     event AllowedCountryAdded(uint16 indexed country);
@@ -50,13 +51,23 @@ contract JurisdictionModule is Ownable2Step, IModule {
     // --- IModule binding ----------------------------------------------
 
     /// @inheritdoc IModule
+    /// @dev Enforces the IModule contract that the bound compliance is
+    ///      the caller. ModularCompliance.addModule passes
+    ///      `address(this)` as the `compliance` argument, so msg.sender
+    ///      and `compliance` collapse to the same address. Any other
+    ///      caller reverts with UnauthorizedComplianceBinding.
     function bindCompliance(address compliance) external override {
+        if (msg.sender != compliance) revert UnauthorizedComplianceBinding(msg.sender, compliance);
         _bound[compliance] = true;
         emit ComplianceBound(compliance);
     }
 
     /// @inheritdoc IModule
+    /// @dev Same calling convention as bindCompliance — the compliance
+    ///      contract that originally bound this module is the only
+    ///      address authorized to unbind itself.
     function unbindCompliance(address compliance) external override {
+        if (msg.sender != compliance) revert UnauthorizedComplianceBinding(msg.sender, compliance);
         _bound[compliance] = false;
         emit ComplianceUnbound(compliance);
     }
