@@ -112,96 +112,123 @@ describe("End-to-end deposit flow on Arbitrum Sepolia", function () {
     expect(await identityRegistry.isVerified(user.address)).to.equal(true);
   });
 
-  let wrapAmount;
-  let depositAmount;
+  // Idempotency: this test runs against persistent live-chain state.
+  // Re-runs accumulate cUSDC balances, share balances, and deposit
+  // queue state across investors. Every assertion uses BEFORE/AFTER
+  // deltas so the test is correct regardless of pre-existing state,
+  // and so a no-op contract surface gets caught by the delta being
+  // zero rather than an absolute hardcoded value happening to match.
 
-  it("step 2 — mint mUSDC, approve, wrap into encrypted cUSDC", async function () {
-    wrapAmount = 100_000_000n; // 100 mUSDC at 6 decimals
+  const wrapAmount = 100_000_000n; // 100 mUSDC at 6 decimals
+  const depositAmount = 50_000_000n;
+
+  async function decryptBalance(handle) {
+    if (handle === ethers.ZeroHash) return 0n;
+    const { value } = await handleClient.decrypt(handle);
+    return value;
+  }
+
+  it("step 2 — mint mUSDC, approve, wrap into encrypted cUSDC (delta = wrapAmount)", async function () {
+    const beforeHandle = await cusdc.confidentialBalanceOf(user.address);
+    const before = await decryptBalance(beforeHandle);
+    console.log(`    cUSDC balance before wrap: ${before}`);
 
     await (await mUsdc.mint(user.address, wrapAmount)).wait();
-    console.log(`    minted ${wrapAmount} mUSDC`);
-
     await (await mUsdc.approve(await cusdc.getAddress(), wrapAmount)).wait();
-    console.log("    approved cUSDC");
-
     await (await cusdc.wrap(wrapAmount)).wait();
-    console.log("    wrapped");
+    console.log(`    wrapped ${wrapAmount} mUSDC`);
 
-    const balanceHandle = await cusdc.confidentialBalanceOf(user.address);
-    expect(balanceHandle).to.not.equal(ethers.ZeroHash);
+    const afterHandle = await cusdc.confidentialBalanceOf(user.address);
+    expect(afterHandle).to.not.equal(ethers.ZeroHash);
+    const after = await decryptBalance(afterHandle);
+    console.log(`    cUSDC balance after wrap: ${after}`);
 
-    const { value: cusdcBalance } = await handleClient.decrypt(balanceHandle);
-    console.log(`    encrypted cUSDC balance decrypts to: ${cusdcBalance}`);
-    expect(cusdcBalance).to.equal(wrapAmount);
+    expect(after - before).to.equal(wrapAmount);
   });
 
-  it("step 3 — confidentialTransfer cUSDC to the vault", async function () {
-    depositAmount = 50_000_000n; // 50 mUSDC of the 100 wrapped
+  it("step 3 — confidentialTransfer cUSDC to vault (user delta = -depositAmount)", async function () {
+    const beforeHandle = await cusdc.confidentialBalanceOf(user.address);
+    const before = await decryptBalance(beforeHandle);
 
     const { handle, handleProof } = await handleClient.encryptInput(
       depositAmount,
       "uint256",
       await cusdc.getAddress(),
     );
-    console.log("    encrypted transfer amount, calling confidentialTransfer");
-
     await (
       await cusdc.confidentialTransfer(await vault.getAddress(), handle, handleProof)
     ).wait();
     console.log("    transfer mined");
 
-    const remainingBalanceHandle = await cusdc.confidentialBalanceOf(user.address);
-    const { value: remaining } = await handleClient.decrypt(remainingBalanceHandle);
-    console.log(`    cUSDC balance after transfer: ${remaining}`);
-    expect(remaining).to.equal(wrapAmount - depositAmount);
+    const afterHandle = await cusdc.confidentialBalanceOf(user.address);
+    const after = await decryptBalance(afterHandle);
+    console.log(`    cUSDC balance after transfer: ${after} (was ${before})`);
+
+    expect(before - after).to.equal(depositAmount);
   });
 
-  it("step 4 — recordDeposit on vault with encrypted amount", async function () {
+  it("step 4 — recordDeposit on vault (pending delta = +depositAmount)", async function () {
+    const beforeHandle = await vault.pendingDepositOf(user.address);
+    const before = await decryptBalance(beforeHandle);
+
     const { handle, handleProof } = await handleClient.encryptInput(
       depositAmount,
       "uint256",
       await vault.getAddress(),
     );
-
     await (await vault.recordDeposit(handle, handleProof)).wait();
     console.log("    recordDeposit mined");
 
-    const pendingHandle = await vault.pendingDepositOf(user.address);
-    expect(pendingHandle).to.not.equal(ethers.ZeroHash);
+    const afterHandle = await vault.pendingDepositOf(user.address);
+    expect(afterHandle).to.not.equal(ethers.ZeroHash);
+    const after = await decryptBalance(afterHandle);
+    console.log(`    pending after recordDeposit: ${after} (was ${before})`);
 
-    const { value: pending } = await handleClient.decrypt(pendingHandle);
-    console.log(`    pending decrypts to: ${pending}`);
-    expect(pending).to.equal(depositAmount);
+    expect(after - before).to.equal(depositAmount);
   });
 
-  it("step 5 — operator processDeposit (1:1 share ratio)", async function () {
+  it("step 5 — processDeposit (pending -> 0, claimable += pending-before)", async function () {
+    const pendingBeforeHandle = await vault.pendingDepositOf(user.address);
+    const claimableBeforeHandle = await vault.claimableDepositOf(user.address);
+    const pendingBefore = await decryptBalance(pendingBeforeHandle);
+    const claimableBefore = await decryptBalance(claimableBeforeHandle);
+
     await (await vault.processDeposit(user.address)).wait();
     console.log("    processDeposit mined");
 
-    const pendingHandle = await vault.pendingDepositOf(user.address);
-    const claimableHandle = await vault.claimableDepositOf(user.address);
+    const pendingAfterHandle = await vault.pendingDepositOf(user.address);
+    const claimableAfterHandle = await vault.claimableDepositOf(user.address);
+    const pendingAfter = await decryptBalance(pendingAfterHandle);
+    const claimableAfter = await decryptBalance(claimableAfterHandle);
 
-    const { value: pending } = await handleClient.decrypt(pendingHandle);
-    const { value: claimable } = await handleClient.decrypt(claimableHandle);
+    console.log(
+      `    pending: ${pendingBefore} -> ${pendingAfter}; claimable: ${claimableBefore} -> ${claimableAfter}`,
+    );
 
-    console.log(`    after processing -- pending: ${pending}, claimable: ${claimable}`);
-    expect(pending).to.equal(0n);
-    expect(claimable).to.equal(depositAmount);
+    expect(pendingAfter).to.equal(0n);
+    expect(claimableAfter - claimableBefore).to.equal(pendingBefore);
   });
 
-  it("step 6 — claimDeposit, encrypted shares minted to investor", async function () {
+  it("step 6 — claimDeposit (shares delta = +claimable-before; claimable -> 0)", async function () {
+    const claimableBeforeHandle = await vault.claimableDepositOf(user.address);
+    const sharesBeforeHandle = await shareToken.confidentialBalanceOf(user.address);
+    const claimableBefore = await decryptBalance(claimableBeforeHandle);
+    const sharesBefore = await decryptBalance(sharesBeforeHandle);
+
     await (await vault.claimDeposit()).wait();
     console.log("    claimDeposit mined");
 
-    const claimableHandle = await vault.claimableDepositOf(user.address);
-    const { value: claimableAfter } = await handleClient.decrypt(claimableHandle);
+    const claimableAfterHandle = await vault.claimableDepositOf(user.address);
+    const sharesAfterHandle = await shareToken.confidentialBalanceOf(user.address);
+    const claimableAfter = await decryptBalance(claimableAfterHandle);
+    expect(sharesAfterHandle).to.not.equal(ethers.ZeroHash);
+    const sharesAfter = await decryptBalance(sharesAfterHandle);
+
+    console.log(
+      `    claimable: ${claimableBefore} -> ${claimableAfter}; shares: ${sharesBefore} -> ${sharesAfter}`,
+    );
+
     expect(claimableAfter).to.equal(0n);
-
-    const sharesHandle = await shareToken.confidentialBalanceOf(user.address);
-    expect(sharesHandle).to.not.equal(ethers.ZeroHash);
-
-    const { value: shares } = await handleClient.decrypt(sharesHandle);
-    console.log(`    encrypted vault-share balance decrypts to: ${shares}`);
-    expect(shares).to.equal(depositAmount);
+    expect(sharesAfter - sharesBefore).to.equal(claimableBefore);
   });
 });

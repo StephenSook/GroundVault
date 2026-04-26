@@ -182,21 +182,23 @@ This deployment satisfies the iExec Vibe Coding Challenge requirement that BUIDL
 
 ## Phase 3 production deployment (Arbitrum Sepolia)
 
-All 11 production GroundVault contracts deployed to Arbitrum Sepolia (chain 421614) on 2026-04-26 by the builder wallet `0x9Fba564bC5319101Ee373a09676f1e4857676f15`. Total gas burned 0.000194 ETH. Every contract verified on Etherscan V2 — source is browseable via the Arbiscan links below.
+All 11 production GroundVault contracts deployed (and source-verified on Etherscan V2) on Arbitrum Sepolia (chain 421614) by the builder wallet `0x9Fba564bC5319101Ee373a09676f1e4857676f15`. The current canonical deployment is the **post-review v2** that landed 2026-04-26 after the pre-Phase-4 code review applied four defensive hardening fixes (`recordDeposit` createdAt anchoring, `processDeposit` persistent ACL grant, `JurisdictionModule` binding gate, `GroundVaultToken.confidentialBurn` compliance pre-check). Source-vs-deployed parity is preserved.
 
-| Contract | Address | Arbiscan |
+| Contract | Address (post-review v2) | Arbiscan |
 |---|---|---|
-| ClaimTopicsRegistry | `0xeA891454B99c46843Ec9a2a8342435426eb45140` | [code](https://sepolia.arbiscan.io/address/0xeA891454B99c46843Ec9a2a8342435426eb45140#code) |
-| TrustedIssuersRegistry | `0x0b16e34f612EcE71eF173f75C14dC579669AB353` | [code](https://sepolia.arbiscan.io/address/0x0b16e34f612EcE71eF173f75C14dC579669AB353#code) |
-| ModularCompliance | `0xCfEc0c8a4Ae68ede3a6af1C85e9154f790B5684f` | [code](https://sepolia.arbiscan.io/address/0xCfEc0c8a4Ae68ede3a6af1C85e9154f790B5684f#code) |
-| MockUSDC | `0x89c1b5fa690C11d76Ca0D28a144C6094d8cCE360` | [code](https://sepolia.arbiscan.io/address/0x89c1b5fa690C11d76Ca0D28a144C6094d8cCE360#code) |
-| GroundVaultRegistry | `0xD5B8E1ef6D2472acE258a933201d48cA83EB222c` | [code](https://sepolia.arbiscan.io/address/0xD5B8E1ef6D2472acE258a933201d48cA83EB222c#code) |
-| IdentityRegistry | `0x46AAC60Fe7349E9CBa22D6d8c4EF33Bb9D6F723A` | [code](https://sepolia.arbiscan.io/address/0x46AAC60Fe7349E9CBa22D6d8c4EF33Bb9D6F723A#code) |
-| cUSDC | `0xAFC3FB5579CEA4831FBD82e08f35898a5190E3b2` | [code](https://sepolia.arbiscan.io/address/0xAFC3FB5579CEA4831FBD82e08f35898a5190E3b2#code) |
-| JurisdictionModule | `0x471e63Ed3d762782cc2bE3aD160f9981BF854a75` | [code](https://sepolia.arbiscan.io/address/0x471e63Ed3d762782cc2bE3aD160f9981BF854a75#code) |
-| GroundVaultToken | `0xFbAec40eF9E7A6BCf802845a12b27f7E9EaF2e99` | [code](https://sepolia.arbiscan.io/address/0xFbAec40eF9E7A6BCf802845a12b27f7E9EaF2e99#code) |
-| GroundVaultCore | `0x214ef3aF01304970867D70B0CA812d239F223a09` | [code](https://sepolia.arbiscan.io/address/0x214ef3aF01304970867D70B0CA812d239F223a09#code) |
-| GroundVaultRouter | `0x1D7dAd4026AF7C98E24Abfa38B2eB9ce7f9a6500` | [code](https://sepolia.arbiscan.io/address/0x1D7dAd4026AF7C98E24Abfa38B2eB9ce7f9a6500#code) |
+| ClaimTopicsRegistry | `0x9aFaABE6eF6401E0291f0304aB09FA40a93023ad` | [code](https://sepolia.arbiscan.io/address/0x9aFaABE6eF6401E0291f0304aB09FA40a93023ad#code) |
+| TrustedIssuersRegistry | `0x6a77E01EF9AbfEdc1d138Df347A6b0210b99E51d` | [code](https://sepolia.arbiscan.io/address/0x6a77E01EF9AbfEdc1d138Df347A6b0210b99E51d#code) |
+| ModularCompliance | `0xb27719bCe14621aeBB94a9f32E0dcFD14d7B3F56` | [code](https://sepolia.arbiscan.io/address/0xb27719bCe14621aeBB94a9f32E0dcFD14d7B3F56#code) |
+| MockUSDC | `0x1621127c84EFFbD1a6A4A64C79101d625a70436d` | [code](https://sepolia.arbiscan.io/address/0x1621127c84EFFbD1a6A4A64C79101d625a70436d#code) |
+| GroundVaultRegistry | `0x8D008Fd6c2CCE89A59D50aF08e1DAFCE39cb283b` | [code](https://sepolia.arbiscan.io/address/0x8D008Fd6c2CCE89A59D50aF08e1DAFCE39cb283b#code) |
+| IdentityRegistry | `0x7985343f6e69ebeb1d83f9fb86A09dC9142E3e47` | [code](https://sepolia.arbiscan.io/address/0x7985343f6e69ebeb1d83f9fb86A09dC9142E3e47#code) |
+| cUSDC | `0x9903Ab70ff715d5422C4EeA060a8aCA01D783Dcf` | [code](https://sepolia.arbiscan.io/address/0x9903Ab70ff715d5422C4EeA060a8aCA01D783Dcf#code) |
+| JurisdictionModule | `0x45ce6c271392f1324293e6f1C9e35Acbb2F94AB5` | [code](https://sepolia.arbiscan.io/address/0x45ce6c271392f1324293e6f1C9e35Acbb2F94AB5#code) |
+| GroundVaultToken | `0x3DB2b965e53706Bc9EFbB2368077a12DF9fB7dbF` | [code](https://sepolia.arbiscan.io/address/0x3DB2b965e53706Bc9EFbB2368077a12DF9fB7dbF#code) |
+| GroundVaultCore | `0xEA5d7c081C92ca2cf6980b36269b4bDc042a5FCD` | [code](https://sepolia.arbiscan.io/address/0xEA5d7c081C92ca2cf6980b36269b4bDc042a5FCD#code) |
+| GroundVaultRouter | `0xfD4068aeDb3eb5A92468970Bdf554f70720E80e9` | [code](https://sepolia.arbiscan.io/address/0xfD4068aeDb3eb5A92468970Bdf554f70720E80e9#code) |
+
+The v1 deployment that landed earlier on the same day (addresses `0xeA89...`, etc.) is still on-chain and still source-verified — the v2 redeploy was a clean rebuild against the post-review source, not an amendment of the v1 contracts. v1 + v2 together provide two independent live integration-test passes on the same day; the integration test against v2 is the canonical one going forward and uses idempotent delta assertions so it can be re-run against persistent live state without state-pollution false negatives.
 
 **Configuration applied during deploy** (single deploy script, all atomic):
 - KYC topic (`1`) registered on ClaimTopicsRegistry
@@ -216,14 +218,14 @@ The full deployment manifest is committed at `deployments/arbitrumSepolia.json` 
 
 The full GroundVault deposit lifecycle was exercised against the deployed contracts on Arbitrum Sepolia, using the `@iexec-nox/handle@0.1.0-beta.10` SDK to encrypt amounts client-side and decrypt the resulting balance handles via TEE. Test runtime: 24 seconds for six sequential steps including all on-chain transactions.
 
-| Step | Action | Result |
+| Step | Action | Result (delta assertion) |
 |---|---|---|
-| 1 | Deploy per-investor `Identity` + add KYC claim + register | Identity at `0x599659d1Be9994EAeC4F006ad4f0DBC6FA4573C0`, `isVerified` returns true |
-| 2 | mint 100 mUSDC, approve cUSDC, `cUSDC.wrap(100 mUSDC)` | Encrypted balance decrypts to **100,000,000** (100 mUSDC) |
-| 3 | `cUSDC.confidentialTransfer(vault, 50 mUSDC)` | Remaining cUSDC decrypts to **50,000,000** (50 mUSDC) |
-| 4 | `vault.recordDeposit(50 mUSDC)` | Pending decrypts to **50,000,000** |
-| 5 | `vault.processDeposit(user)` (operator) | Pending = 0, claimable = **50,000,000** (1:1 share ratio) |
-| 6 | `vault.claimDeposit()` | GroundVaultToken share balance decrypts to **50,000,000** |
+| 1 | Deploy per-investor `Identity` + add KYC claim + register | First Identity at `0x599659d1Be9994EAeC4F006ad4f0DBC6FA4573C0` (v1 IR); v2 IR re-registered Identity at `0x4E6D84810C122f256b843Df3A00AAB22EF0EA365`; `isVerified` returns true under both |
+| 2 | mint 100 mUSDC, approve cUSDC, `cUSDC.wrap(100 mUSDC)` | Encrypted cUSDC balance grew by **+100,000,000** |
+| 3 | `cUSDC.confidentialTransfer(vault, 50 mUSDC)` | User's encrypted cUSDC balance dropped by **−50,000,000** |
+| 4 | `vault.recordDeposit(50 mUSDC)` | Vault pending grew by **+50,000,000** |
+| 5 | `vault.processDeposit(user)` (operator) | Pending → 0, claimable grew by exactly the prior pending amount (**+50,000,000**) |
+| 6 | `vault.claimDeposit()` | Claimable → 0, GroundVaultToken share balance grew by exactly the prior claimable amount (**+50,000,000**) |
 
 This demonstrates four end-to-end claims:
 1. ERC-7984 encrypted-balance transitions are correct on real chain.
