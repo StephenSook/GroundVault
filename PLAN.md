@@ -93,7 +93,7 @@ Git repo + license + initial commit are **already done**. Remaining tonight:
 4. **DoraHacks BUIDL** — register submission at https://dorahacks.io/hackathon/vibe-coding-iexec/detail
 5. **Arbitrum Sepolia ETH** — grab from `faucets.chain.link/arbitrum-sepolia` + Alchemy + thirdweb (have 2-3 on hand)
 6. **iExec RLC testnet** — claim from RLC faucet via Discord
-7. **Atlanta property source** — save Atlanta Land Trust "Trust at Oakland City" listing URL into `docs/citations.md` (964 Lawton St SW, $196,713, ≤80% AMI)
+7. **Atlanta property source** — verified against live ALT listings page on 2026-04-26: anchor swapped from 964 Lawton (now Under Contract) to **960 Lawton St SW** (Oakland City, 3 bed / 2 bath, 1,326 sqft, $250,000, 80% AMI, **currently Available**). Full ALT corpus + project context in `docs/citations.md`.
 8. **Vercel** — create Vercel project pointed at the GitHub repo (preview deploys from main)
 
 ---
@@ -228,7 +228,7 @@ Functions, events, lifecycle from the Architecture section above.
 ```solidity
 struct Opportunity {
     uint256 id;
-    string name;                          // "Trust at Oakland City - 964 Lawton St SW"
+    string name;                          // "Trust at Oakland City - 960 Lawton St SW"
     string locationLabel;                 // "Atlanta, GA 30310"
     uint256 fundingTargetUSD;             // public floor; donor signal
     bytes32 confidentialFundingHandle;    // private exact target visible to manager + auditors
@@ -288,7 +288,7 @@ If on:
 10. `GroundVaultRouter` (registry + core + cUSDC)
 11. `token.setCore(core)`
 12. Register demo investor identity + add KYC claim
-13. Add 1 demo opportunity (964 Lawton St SW, Atlanta GA 30310)
+13. Add 1 demo opportunity (960 Lawton St SW, Atlanta — Oakland City, $250,000, 80% AMI)
 14. Save addresses → `deployments/arbitrumSepolia.json`
 15. **`npx hardhat verify --network arbitrumSepolia <addr>` for every deployed contract** — Arbiscan-verified source is judge table-stakes
 
