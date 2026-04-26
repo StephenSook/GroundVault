@@ -66,6 +66,11 @@ _To be filled Apr 26-27. Topics planned to cover: ERC-7984 wrapping flow, ERC-36
 - Does iExec ship a Nox precompile mock for hardhat-network unit tests?
 - Is there a recommended pattern for confidentialTransferFrom on ERC-7984 wrappers, or is the spec deliberately leaving that flow application-specific?
 
+### Live Sepolia integration test (2026-04-26)
+- `@iexec-nox/handle@0.1.0-beta.10` worked first-try with no debugging needed. `createEthersHandleClient(signer)` factory + `encryptInput(value, "uint256", applicationContract)` for inputs, `decrypt(handle)` for outputs — exactly what the README claimed. Six sequential live steps (Identity + KYC + wrap + confidentialTransfer + recordDeposit + processDeposit + claimDeposit) all passed in 24 s wall clock.
+- Per-step latency on Arbitrum Sepolia averaged 2.5 s after the warm-up step. The encrypt + sign + broadcast + decrypt cycle is fast enough that the demo-recording flow (Phase 6) does not need to fake any latency.
+- The handle SDK requires the encrypted input to be bound to a specific `applicationContract` address. When recording a deposit, the user must therefore encrypt twice — once for cUSDC.confidentialTransfer (bound to cUSDC), once for vault.recordDeposit (bound to vault). This is correct ACL behaviour but worth documenting up front in the iExec docs so builders don't try to reuse a handle across contracts.
+
 ### Hardhat-network confidential mock
 - _Open question: does the Nox library expose a Hardhat-network mock for unit tests, or are we required to run integration tests against Sepolia? Will document either way._
 

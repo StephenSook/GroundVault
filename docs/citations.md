@@ -212,6 +212,29 @@ The full deployment manifest is committed at `deployments/arbitrumSepolia.json` 
 
 ---
 
+## Phase 3 end-to-end integration test (live Sepolia)
+
+The full GroundVault deposit lifecycle was exercised against the deployed contracts on Arbitrum Sepolia, using the `@iexec-nox/handle@0.1.0-beta.10` SDK to encrypt amounts client-side and decrypt the resulting balance handles via TEE. Test runtime: 24 seconds for six sequential steps including all on-chain transactions.
+
+| Step | Action | Result |
+|---|---|---|
+| 1 | Deploy per-investor `Identity` + add KYC claim + register | Identity at `0x599659d1Be9994EAeC4F006ad4f0DBC6FA4573C0`, `isVerified` returns true |
+| 2 | mint 100 mUSDC, approve cUSDC, `cUSDC.wrap(100 mUSDC)` | Encrypted balance decrypts to **100,000,000** (100 mUSDC) |
+| 3 | `cUSDC.confidentialTransfer(vault, 50 mUSDC)` | Remaining cUSDC decrypts to **50,000,000** (50 mUSDC) |
+| 4 | `vault.recordDeposit(50 mUSDC)` | Pending decrypts to **50,000,000** |
+| 5 | `vault.processDeposit(user)` (operator) | Pending = 0, claimable = **50,000,000** (1:1 share ratio) |
+| 6 | `vault.claimDeposit()` | GroundVaultToken share balance decrypts to **50,000,000** |
+
+This demonstrates four end-to-end claims:
+1. ERC-7984 encrypted-balance transitions are correct on real chain.
+2. ERC-3643 identity gate (per-investor Identity + ECDSA-verified KYC claim + IdentityRegistry.isVerified) blocks unverified addresses and admits verified ones.
+3. The ERC-7540-style async lifecycle (PENDING → CLAIMABLE → CLAIMED) functions correctly under encrypted handles with the custom queue we wrote because ERC-7540's `uint256` shape doesn't fit ERC-7984's `bytes32` handle shape.
+4. The Nox handle SDK encrypts client-side inputs and decrypts contract-emitted handles correctly given ACL grants.
+
+The integration test source is committed at `test/integration/end-to-end.integration.js` so reviewers can run it against their own RPC + funded wallet.
+
+---
+
 ## Maria — composite persona disclosure
 
 The "Maria" character in the GroundVault pitch is a **composite persona** modeled on real Atlanta-area Community Land Trust executive directors. Specific details (lost 3 properties this year, on-chain bot front-running) compress the documented Raymond et al. + RealT Detroit + ALT Oakland City realities into a single representative narrative. No claim about a specific identifiable person is made.
