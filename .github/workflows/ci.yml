@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Read-only token: no secrets, no untrusted-input expansion in run: blocks.
+permissions: read-all
+
+jobs:
+  contracts:
+    name: Compile + test contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          elif [ -f package.json ]; then
+            npm install
+          else
+            echo "package.json not present yet (pre-Phase-1). Skipping install."
+          fi
+
+      - name: Compile contracts
+        run: |
+          if [ -f hardhat.config.js ] || [ -f hardhat.config.ts ]; then
+            npx hardhat compile
+          else
+            echo "Hardhat config not present yet (pre-Phase-1). Skipping compile."
+          fi
+
+      - name: Run tests
+        run: |
+          if [ -d test ] && [ "$(find test -name '*.test.js' -o -name '*.test.ts' 2>/dev/null | head -n 1)" != "" ]; then
+            npx hardhat test
+          else
+            echo "No tests yet. Skipping."
+          fi
