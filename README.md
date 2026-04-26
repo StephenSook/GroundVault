@@ -36,17 +36,50 @@ See [`PLAN.md`](./PLAN.md) for the full multi-phase implementation plan.
 
 ## Architecture
 
-Three smart contracts, each under 300 lines:
+Eleven production contracts deployed to Arbitrum Sepolia (chain 421614), organized in five dependency layers. Full deployment manifest: [`deployments/arbitrumSepolia.json`](./deployments/arbitrumSepolia.json).
 
-- **GroundVaultToken** — ERC-7984 confidential share token gated by ERC-3643 whitelist
-- **GroundVaultCore** — custom confidential async deposit queue (PENDING → CLAIMABLE → CLAIMED → CANCELLED)
-- **GroundVaultRegistry** — housing opportunity metadata + ChainGPT Impact Risk Memo hash anchor
+**Identity layer (ERC-3643 / T-REX 5-piece):**
+- `ClaimTopicsRegistry` — required claim topics curated by the issuer
+- `TrustedIssuersRegistry` — issuer → topic[] permission table
+- `Identity` — per-investor claim store (deployed at onboarding time, not in the deploy batch)
+- `IdentityRegistry` — wallet → Identity binding + ECDSA-verified `isVerified` gate
 
-Frontend: React + Vite + Tailwind + wagmi v2 + ethers v6. Four screens: Investor Verification, Confidential Deposit Flow, Housing Opportunity Dashboard, ChainGPT Impact Risk Memo.
+**Compliance layer:**
+- `ModularCompliance` — token-bound contract that fans pre/post-transfer hooks out to modules
+- `JurisdictionModule` — country allowlist module read from IdentityRegistry
+
+**Token layer (ERC-7984 confidential):**
+- `MockUSDC` — testnet ERC-20 underlying (6 decimals, owner-mintable)
+- `cUSDC` — confidential wrap of MockUSDC; one-way wrap, encrypted balance + transfer
+- `GroundVaultToken` — confidential vault-share token gated by `IdentityRegistry.isVerified` + `ModularCompliance.canTransfer`
+
+**Vault:**
+- `GroundVaultCore` — custom encrypted async deposit queue (PENDING → CLAIMABLE → CLAIMED). Adapts the ERC-7540 lifecycle to the bytes32 encrypted handles required by ERC-7984 (the standard's `uint256` shape doesn't fit). Cancel-after-timeout flow stubbed for Phase 2.6.
+
+**Ancillary:**
+- `GroundVaultRegistry` — housing opportunity metadata + ChainGPT Impact Risk Memo hash anchor (separate `MEMO_ROLE` so the memo automation account cannot edit asset records)
+- `GroundVaultRouter` — read-only third-party composability proof (encrypted total supply, balance, pending, claimable handles)
+
+Headline contracts for the demo: **GroundVaultToken**, **GroundVaultCore**, **GroundVaultRegistry**.
+
+Frontend: React + Vite + Tailwind + wagmi v2 + ethers v6 + `@iexec-nox/handle`. Four screens: Investor Verification, Confidential Deposit Flow, Housing Opportunity Dashboard, ChainGPT Impact Risk Memo.
 
 ## Quick start
 
-> Once Phase 1 lands. Pre-scaffold for now.
+```bash
+nvm use                 # uses .nvmrc -> Node 20
+npm install
+cp .env.example .env    # then fill PRIVATE_KEY and the API keys
+npx hardhat compile
+npx hardhat test        # 152 unit tests pass on the local hardhat network
+
+# To deploy a fresh copy (skip if using the existing Sepolia deployment):
+npx hardhat run scripts/deploy-all.js --network arbitrumSepolia
+npx hardhat run scripts/verify-all.js --network arbitrumSepolia
+
+# To re-run the live end-to-end integration test against the deployed contracts:
+npx hardhat test test/integration/end-to-end.integration.js --network arbitrumSepolia
+```
 
 ```bash
 # Install

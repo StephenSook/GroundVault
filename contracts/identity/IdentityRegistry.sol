@@ -180,8 +180,11 @@ contract IdentityRegistry is AccessControl, IIdentityRegistry {
         return true;
     }
 
-    /// @notice Verify the EIP-191 signature on a claim. The canonical
-    ///         message is keccak256(abi.encode(identity, topic, data)).
+    /// @notice Verify an EIP-191 personal_sign signature on a claim.
+    ///         The signed digest is
+    ///         toEthSignedMessageHash(keccak256(abi.encode(identity,
+    ///         topic, data))) — the issuer signs the EIP-191-prefixed
+    ///         hash of (identity, topic, data), not the raw inner hash.
     function _isValidClaimSignature(
         address identityAddr,
         uint256 topic,

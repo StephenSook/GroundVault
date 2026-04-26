@@ -61,7 +61,9 @@ interface IIdentityRegistry {
     /// @notice True if `user` has a registered identity AND that identity
     ///         carries at least one valid claim per required topic, where
     ///         "valid" means: signed by a trusted issuer for that topic
-    ///         using the canonical EIP-191 message
-    ///         keccak256(abi.encode(identity, topic, data)).
+    ///         using EIP-191 personal_sign over
+    ///         keccak256(abi.encode(identity, topic, data)) (the
+    ///         implementation calls toEthSignedMessageHash on that inner
+    ///         hash before recovery).
     function isVerified(address user) external view returns (bool);
 }
