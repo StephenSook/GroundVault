@@ -1,22 +1,103 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ChevronRight, RefreshCw, ShieldCheck } from "lucide-react";
+import { ChevronRight, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
+import { keccak256, toUtf8Bytes } from "ethers";
+
 import { useImpactMemo } from "@/hooks/useMemo";
 import { useOpportunity } from "@/hooks/useOpportunity";
+import { useContracts } from "@/hooks/useContracts";
+import { useWallet } from "@/hooks/useWallet";
+import { toast } from "@/hooks/use-toast";
+import { generateMemo } from "@/lib/api/chaingpt";
+import { fetchCostBurden } from "@/lib/api/hud";
+import { fetchLatestRate } from "@/lib/api/fred";
+
 import { MemoBody } from "@/components/memo/MemoBody";
 import { ProvenancePanel } from "@/components/memo/ProvenancePanel";
 import { Button } from "@/components/ui/button";
 
-// TODO: replace with real role check from MemoRegistry contract
+const MEMO_ROLE_HASH = keccak256(toUtf8Bytes("MEMO_ROLE"));
+
 function useIsMemoBot() {
-  if (typeof window === "undefined") return false;
-  return new URLSearchParams(window.location.search).get("role") === "memo";
+  const { address, isConnected } = useWallet();
+  const { housingRegistry } = useContracts();
+  const [hasRole, setHasRole] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const queryOverride =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("role") === "memo";
+
+    if (queryOverride) {
+      setHasRole(true);
+      return;
+    }
+    if (!address || !isConnected) {
+      setHasRole(false);
+      return;
+    }
+    (async () => {
+      try {
+        const result = await housingRegistry.hasRole(MEMO_ROLE_HASH, address);
+        if (!cancelled) setHasRole(Boolean(result));
+      } catch {
+        if (!cancelled) setHasRole(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [address, isConnected, housingRegistry]);
+
+  return hasRole;
 }
 
 export default function Memo() {
   const { id } = useParams();
   const { data: memo } = useImpactMemo(id);
   const { data: opp } = useOpportunity(id);
+  const { housingRegistry } = useContracts();
   const isBot = useIsMemoBot();
+  const [busy, setBusy] = useState(false);
+
+  const numericId = id ? Number(id) : 1;
+  const breadcrumbAddress = opp?.address ?? "Loading…";
+
+  async function regenerate() {
+    if (!opp) return;
+    setBusy(true);
+    try {
+      const [costBurden, treasury] = await Promise.all([
+        fetchCostBurden("13121"),
+        fetchLatestRate("DGS10"),
+      ]);
+      const result = await generateMemo(
+        {
+          address: opp.address,
+          neighborhood: opp.neighborhood,
+          operator: "Atlanta Land Trust",
+          amiTier: 80,
+          listPriceUsd: opp.targetPrice,
+        },
+        {
+          costBurdenSeverePct: costBurden.severelyBurdenedPct,
+          treasuryRatePct: treasury,
+        },
+      );
+      // Pinning step is stubbed — for the demo we anchor the hash with
+      // an empty memoUri. A production deployment would pin to IPFS
+      // first and pass the cid back here.
+      const tx = await housingRegistry.setMemo(numericId, result.hash, "");
+      await tx.wait();
+      toast({ title: "Memo regenerated", description: "On-chain hash anchored" });
+    } catch (err: any) {
+      console.error(err);
+      toast({ title: "Memo regenerate failed", description: err?.shortMessage ?? err?.message });
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div className="container py-10 pb-32 space-y-8">
@@ -25,7 +106,7 @@ export default function Memo() {
         <ol className="flex items-center gap-2 text-muted-foreground">
           <li><Link to="/housing" className="hover:text-forest">Housing</Link></li>
           <ChevronRight className="h-3.5 w-3.5" />
-          <li><Link to={`/housing/${id}`} className="hover:text-forest">{opp.address}</Link></li>
+          <li><Link to={`/housing/${id}`} className="hover:text-forest">{breadcrumbAddress}</Link></li>
           <ChevronRight className="h-3.5 w-3.5" />
           <li className="text-foreground">Impact memo</li>
         </ol>
@@ -52,8 +133,13 @@ export default function Memo() {
               <ShieldCheck className="h-4 w-4 text-sage" />
               MEMO_ROLE active. You have permissions to update this document.
             </span>
-            <Button className="bg-forest hover:bg-forest/90">
-              <RefreshCw className="h-3.5 w-3.5" /> Regenerate memo with ChainGPT
+            <Button onClick={regenerate} disabled={busy} className="bg-forest hover:bg-forest/90">
+              {busy ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5" />
+              )}
+              Regenerate memo with ChainGPT
             </Button>
           </div>
         </div>
