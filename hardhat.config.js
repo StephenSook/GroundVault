@@ -25,17 +25,7 @@ module.exports = {
     },
   },
   etherscan: {
-    apiKey: { arbitrumSepolia: ARBISCAN_API_KEY },
-    customChains: [
-      {
-        network: "arbitrumSepolia",
-        chainId: 421614,
-        urls: {
-          apiURL: "https://api-sepolia.arbiscan.io/api",
-          browserURL: "https://sepolia.arbiscan.io",
-        },
-      },
-    ],
+    apiKey: ARBISCAN_API_KEY,
   },
   paths: {
     sources: "./contracts",
