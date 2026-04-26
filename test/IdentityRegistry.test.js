@@ -233,6 +233,16 @@ describe("IdentityRegistry", function () {
       expect(await registry.isVerified(other.address)).to.equal(false);
     });
 
+    it("returns true when ClaimTopicsRegistry has zero required topics and identity is registered", async function () {
+      const { agent, user, registry, userIdentity } = await deployStack();
+      // No topics added, no claims required.
+      await registry
+        .connect(agent)
+        .registerIdentity(user.address, await userIdentity.getAddress(), COUNTRY_US);
+
+      expect(await registry.isVerified(user.address)).to.equal(true);
+    });
+
     it("returns true with a single valid claim per required topic", async function () {
       const { admin, agent, kycIssuer, user, registry, claimTopics, trustedIssuers, userIdentity } =
         await deployStack();

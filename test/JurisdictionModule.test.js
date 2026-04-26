@@ -128,6 +128,67 @@ describe("JurisdictionModule", function () {
     });
   });
 
+  describe("bindCompliance / unbindCompliance", function () {
+    it("rejects callers that are not the bound compliance", async function () {
+      const { compliance: pretender, module } = await deployStack();
+
+      const fakeCompliance = pretender.address; // any address that is not msg.sender
+      // The pretender signer's address differs from the EOA the test passes in.
+      // bindCompliance must revert because msg.sender (the test default signer)
+      // is not equal to the `compliance` argument.
+      await expect(
+        module.bindCompliance(fakeCompliance),
+      )
+        .to.be.revertedWithCustomError(module, "UnauthorizedComplianceBinding");
+
+      await expect(
+        module.unbindCompliance(fakeCompliance),
+      )
+        .to.be.revertedWithCustomError(module, "UnauthorizedComplianceBinding");
+    });
+
+    it("accepts a self-binding caller (the standard ModularCompliance.addModule path)", async function () {
+      const { module, admin } = await deployStack();
+      // When the caller IS the compliance argument, the check passes.
+      await module.connect(admin).bindCompliance(admin.address);
+      expect(await module.isComplianceBound(admin.address)).to.equal(true);
+
+      await module.connect(admin).unbindCompliance(admin.address);
+      expect(await module.isComplianceBound(admin.address)).to.equal(false);
+    });
+
+    it("integrates correctly with ModularCompliance.addModule", async function () {
+      const { admin, module } = await deployStack();
+      const Compliance = await ethers.getContractFactory("ModularCompliance");
+      const compliance = await Compliance.deploy(admin.address);
+      await compliance.waitForDeployment();
+
+      // ModularCompliance.addModule calls module.bindCompliance(address(this))
+      // — msg.sender (the compliance contract) equals the `compliance`
+      // argument, so the new gate is satisfied.
+      await compliance.connect(admin).addModule(await module.getAddress());
+      expect(await module.isComplianceBound(await compliance.getAddress())).to.equal(true);
+
+      await compliance.connect(admin).removeModule(await module.getAddress());
+      expect(await module.isComplianceBound(await compliance.getAddress())).to.equal(false);
+    });
+
+    it("treats a mint (from == address(0)) as a regular transfer — recipient is checked", async function () {
+      const { admin, compliance, user, otherUser, module } = await deployStack();
+      await module.connect(admin).addAllowedCountry(COUNTRY_US);
+
+      // Allowed recipient: user is registered with COUNTRY_US
+      expect(
+        await module.moduleCheck(ethers.ZeroAddress, user.address, 0, compliance.address),
+      ).to.equal(true);
+
+      // Disallowed recipient: otherUser is registered with COUNTRY_RU (not on the allowlist)
+      expect(
+        await module.moduleCheck(ethers.ZeroAddress, otherUser.address, 0, compliance.address),
+      ).to.equal(false);
+    });
+  });
+
   describe("setIdentityRegistry", function () {
     it("owner can swap the IR; non-owner cannot", async function () {
       const { admin, module } = await deployStack();

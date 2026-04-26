@@ -198,5 +198,18 @@ describe("GroundVaultRegistry", function () {
         registry.connect(memoBot).updateOpportunity(1, "x", "y", 60, 1n),
       ).to.be.revertedWithCustomError(registry, "AccessControlUnauthorizedAccount");
     });
+
+    it("an account holding ONLY DEFAULT_ADMIN_ROLE (after MEMO_ROLE revoke) cannot setMemo", async function () {
+      // Admin starts with both roles. Revoke MEMO_ROLE; admin retains
+      // only DEFAULT_ADMIN_ROLE. setMemo should now revert for admin.
+      await registry.connect(admin).revokeRole(await registry.MEMO_ROLE(), admin.address);
+
+      await expect(
+        registry.connect(admin).setMemo(1, ethers.ZeroHash, ""),
+      ).to.be.revertedWithCustomError(registry, "AccessControlUnauthorizedAccount");
+
+      // memoBot still holds MEMO_ROLE and can call setMemo.
+      await registry.connect(memoBot).setMemo(1, ethers.id("v3"), "ipfs://v3");
+    });
   });
 });
