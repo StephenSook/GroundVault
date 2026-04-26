@@ -30,6 +30,10 @@ const CONTRACTS = [
 const abisDir = join(FRONTEND_ROOT, "src", "abis");
 if (!existsSync(abisDir)) mkdirSync(abisDir, { recursive: true });
 
+// Identity is special — frontend must DEPLOY a fresh Identity per investor
+// during the verify flow, so we keep its bytecode alongside the abi.
+const NEEDS_BYTECODE = new Set(["Identity"]);
+
 for (const c of CONTRACTS) {
   const name = c.split("/").pop();
   const src = join(REPO_ROOT, "artifacts", "contracts", `${c}.sol`, `${name}.json`);
@@ -39,11 +43,14 @@ for (const c of CONTRACTS) {
     continue;
   }
   const json = JSON.parse(data);
+  const payload = NEEDS_BYTECODE.has(name)
+    ? { abi: json.abi, bytecode: json.bytecode }
+    : { abi: json.abi };
   writeFileSync(
     join(abisDir, `${name}.json`),
-    JSON.stringify({ abi: json.abi }, null, 2),
+    JSON.stringify(payload, null, 2),
   );
-  console.log(`  ${name} -> ${json.abi.length} entries`);
+  console.log(`  ${name} -> ${json.abi.length} entries${NEEDS_BYTECODE.has(name) ? " (+bytecode)" : ""}`);
 }
 
 const manifestSrc = join(REPO_ROOT, "deployments", "arbitrumSepolia.json");

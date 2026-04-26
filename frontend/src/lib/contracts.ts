@@ -65,9 +65,11 @@ export const ABIS: Record<ContractName, ReadonlyArray<unknown>> = {
 };
 
 // Identity is deployed per-investor at onboarding time, not as part of the
-// manifest. The Identity ABI is exported separately so the verify flow can
-// deploy and interact with a fresh Identity for the connected wallet.
+// manifest. The Identity ABI + bytecode are exported separately so the
+// verify flow can deploy and interact with a fresh Identity for the
+// connected wallet.
 export const IDENTITY_ABI = IdentityAbi.abi;
+export const IDENTITY_BYTECODE = (IdentityAbi as { bytecode?: string }).bytecode ?? "0x";
 export { IdentityAbi };
 
 export function addressOf(name: ContractName): `0x${string}` {
