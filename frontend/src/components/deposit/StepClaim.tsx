@@ -13,7 +13,7 @@ export function StepClaim({ amount, onClaim, onReset }: StepClaimProps) {
       <CheckCircle2 className="h-10 w-10 text-sage mx-auto" />
       <h3 className="font-display text-2xl text-forest">Deposit confirmed</h3>
       <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-        ${amount.toLocaleString("en-US")} cUSDC has been committed to RWA-042. Claim your GVT shares.
+        {amount.toLocaleString("en-US")} cUSDC has been committed to RWA-001 (960 Lawton). Claim your GVT shares.
       </p>
       <div className="flex items-center justify-center gap-3">
         <Button onClick={onClaim} className="bg-forest hover:bg-forest/90">

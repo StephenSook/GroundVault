@@ -28,21 +28,20 @@ export function StepRequest({ amount, setAmount, busy, onSubmit }: StepRequestPr
         <div className="flex items-baseline justify-between mb-4">
           <span className="text-xs uppercase tracking-wider text-muted-foreground">Deposit Amount</span>
           <div className="font-display">
-            <span className="text-muted-foreground text-xl">$</span>
             <span className="text-4xl text-forest">{amount.toLocaleString("en-US")}</span>
-            <span className="text-muted-foreground text-sm">.00</span>
+            <span className="text-muted-foreground text-sm ml-2">mUSDC</span>
           </div>
         </div>
         <Slider
           value={[amount]}
-          min={1000}
-          max={100000}
-          step={500}
+          min={1}
+          max={100}
+          step={1}
           onValueChange={(v) => setAmount(v[0])}
         />
         <div className="flex justify-between text-[10px] text-muted-foreground mt-2 font-mono">
-          <span>$1,000</span>
-          <span>$100,000</span>
+          <span>1 mUSDC</span>
+          <span>100 mUSDC</span>
         </div>
       </div>
 

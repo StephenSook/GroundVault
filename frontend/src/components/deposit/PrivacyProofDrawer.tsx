@@ -60,15 +60,15 @@ export function PrivacyProofDrawer({
         <div className="rounded-md border border-sage/40 bg-background p-4">
           <div className="text-[10px] font-semibold tracking-widest text-sage mb-3 flex items-center gap-2">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-sage" />
-            YOUR VIEW
+            YOUR VIEW (Nox ACL)
           </div>
           <div className="space-y-1">
             <div className="text-xs text-muted-foreground">Decrypted Value:</div>
             <div className="font-display text-2xl text-forest">
-              ${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })} cUSDC
+              {amount.toLocaleString("en-US")} cUSDC
             </div>
             <div className="text-[10px] text-muted-foreground pt-2 border-t border-border/60 font-mono">
-              tx {txHash.slice(0, 18)}… · block #{blockNumber.toLocaleString()} · Authorized via View Key
+              tx {txHash.slice(0, 18)}… · block #{blockNumber.toLocaleString()} · Authorized via Nox handle ACL
             </div>
           </div>
         </div>

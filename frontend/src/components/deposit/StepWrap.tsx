@@ -14,9 +14,9 @@ export function StepWrap({ amount, busy, onWrap }: StepWrapProps) {
         First, wrap public USDC into confidential cUSDC. Balance becomes a shielded handle.
       </p>
       <div className="rounded-md border border-border bg-secondary/40 p-4 flex items-center justify-between">
-        <span className="text-sm">USDC → cUSDC</span>
+        <span className="text-sm">mUSDC → cUSDC</span>
         <span className="font-display text-xl text-forest">
-          ${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+          {amount.toLocaleString("en-US")} <span className="text-sm text-muted-foreground">mUSDC</span>
         </span>
       </div>
       <Button onClick={onWrap} disabled={busy} className="bg-forest hover:bg-forest/90 w-full">
