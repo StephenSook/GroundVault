@@ -19,8 +19,9 @@ export function useIdentityStatus(wallet?: string) {
 
   useEffect(() => {
     let cancelled = false;
+    const allowBypass = import.meta.env.VITE_ALLOW_DEMO_BYPASSES === "1";
     const queryOverride =
-      typeof window !== "undefined"
+      allowBypass && typeof window !== "undefined"
         ? (new URLSearchParams(window.location.search).get("status") as IdentityStatus | null)
         : null;
     if (queryOverride === "verified" || queryOverride === "pending" || queryOverride === "unverified") {

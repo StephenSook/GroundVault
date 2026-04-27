@@ -2,11 +2,14 @@ import { useAccount, useChainId, useConnect, useDisconnect } from "wagmi";
 import { ARB_SEPOLIA_ID } from "@/lib/wagmi";
 
 /**
- * Dev-mode mock toggle: when ?wallet=mock is in the URL, simulate a connected wallet
- * so design states are demoable without an extension.
+ * Demo bypass: when ?wallet=mock is in the URL AND VITE_ALLOW_DEMO_BYPASSES=1
+ * is set at build time, simulate a connected wallet so the design states
+ * are demoable without a real extension. The build-time gate keeps a
+ * hardened production build out of mock-wallet mode regardless of URL.
  */
 function useMockWallet() {
   if (typeof window === "undefined") return null;
+  if (import.meta.env.VITE_ALLOW_DEMO_BYPASSES !== "1") return null;
   const params = new URLSearchParams(window.location.search);
   if (params.get("wallet") === "mock") {
     return {

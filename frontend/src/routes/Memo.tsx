@@ -25,7 +25,9 @@ function useIsMemoBot() {
 
   useEffect(() => {
     let cancelled = false;
+    const allowBypass = import.meta.env.VITE_ALLOW_DEMO_BYPASSES === "1";
     const queryOverride =
+      allowBypass &&
       typeof window !== "undefined" &&
       new URLSearchParams(window.location.search).get("role") === "memo";
 
