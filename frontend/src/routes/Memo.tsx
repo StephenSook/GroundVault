@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ChevronRight, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ChevronRight, Loader2, RefreshCcw, RefreshCw, ShieldCheck } from "lucide-react";
 import { keccak256, toUtf8Bytes } from "ethers";
 
 import { useImpactMemo } from "@/hooks/useMemo";
@@ -55,7 +55,7 @@ function useIsMemoBot() {
 
 export default function Memo() {
   const { id } = useParams();
-  const { data: memo } = useImpactMemo(id);
+  const { data: memo, error: memoError, retry: retryMemo } = useImpactMemo(id);
   const { data: opp } = useOpportunity(id);
   const { housingRegistry } = useContracts();
   const isBot = useIsMemoBot();
@@ -141,6 +141,24 @@ export default function Memo() {
           </span>
         </div>
       </nav>
+
+      {memoError && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 flex items-start gap-3">
+          <AlertTriangle className="h-4 w-4 text-destructive mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-destructive">Memo read failed</div>
+            <div className="text-xs text-destructive/80 font-mono break-all">
+              {memoError.length > 200 ? `${memoError.slice(0, 200)}…` : memoError}
+            </div>
+            <p className="text-[11px] text-destructive/70 mt-1">
+              The on-screen memo body and provenance below are showing the fallback template — the real chain state is unknown until this read succeeds.
+            </p>
+          </div>
+          <Button onClick={retryMemo} variant="outline" size="sm">
+            <RefreshCcw className="h-3.5 w-3.5" /> Retry
+          </Button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
         <MemoBody memo={memo} />

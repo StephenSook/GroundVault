@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { keccak256, toUtf8Bytes } from "ethers";
 
 import { useContracts } from "@/hooks/useContracts";
@@ -53,13 +53,16 @@ function parseMarkdownSections(markdown: string): ImpactMemo["sections"] {
 export function useImpactMemo(opportunityId: string | undefined) {
   const { housingRegistry } = useContracts();
   const [data, setData] = useState<ImpactMemo>(FALLBACK);
+  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [retryToken, setRetryToken] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     const numericId = opportunityId ? Number(opportunityId) : 1;
 
     setIsLoading(true);
+    setError(null);
     (async () => {
       try {
         const op = await housingRegistry.getOpportunity(numericId);
@@ -82,6 +85,7 @@ export function useImpactMemo(opportunityId: string | undefined) {
               verified: false,
             },
           });
+          setError(null);
           return;
         }
 
@@ -104,9 +108,13 @@ export function useImpactMemo(opportunityId: string | undefined) {
             verified,
           },
         });
-      } catch (err) {
+        setError(null);
+      } catch (err: any) {
         console.error("useImpactMemo error:", err);
-        if (!cancelled) setData({ ...FALLBACK, opportunityId: (opportunityId ?? "1") });
+        if (!cancelled) {
+          setData({ ...FALLBACK, opportunityId: (opportunityId ?? "1") });
+          setError(err?.shortMessage ?? err?.message ?? String(err));
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -115,7 +123,9 @@ export function useImpactMemo(opportunityId: string | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [opportunityId, housingRegistry]);
+  }, [opportunityId, housingRegistry, retryToken]);
 
-  return { data, isLoading };
+  const retry = useCallback(() => setRetryToken((t) => t + 1), []);
+
+  return { data, error, isLoading, retry };
 }
