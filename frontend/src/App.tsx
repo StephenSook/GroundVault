@@ -15,6 +15,7 @@ import Verify from "@/routes/Verify";
 import Deposit from "@/routes/Deposit";
 import Housing from "@/routes/Housing";
 import Memo from "@/routes/Memo";
+import Operator from "@/routes/Operator";
 import NotFound from "./pages/NotFound";
 import { DepositGate } from "@/components/deposit/DepositGate";
 
@@ -61,6 +62,7 @@ function Shell() {
           <Route path="/deposit" element={<DepositGuard />} />
           <Route path="/housing" element={<Housing />} />
           <Route path="/housing/:id/memo" element={<Memo />} />
+          <Route path="/operator" element={<Operator />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
