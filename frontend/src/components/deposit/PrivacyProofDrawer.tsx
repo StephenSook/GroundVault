@@ -5,17 +5,22 @@ import { cn } from "@/lib/utils";
 interface PrivacyProofDrawerProps {
   amount: number;
   encryptedHandle: string;
-  txHash?: string;
-  blockNumber?: number;
+  txHash?: string | null;
+  blockNumber?: number | null;
 }
 
 export function PrivacyProofDrawer({
   amount,
   encryptedHandle,
-  txHash = "0x4e1d2c3b9a8f7e6d5c4b3a2918f7e6d5c4b3a291",
-  blockNumber = 53_812_604,
+  txHash,
+  blockNumber,
 }: PrivacyProofDrawerProps) {
   const [open, setOpen] = useState(true);
+
+  const txDisplay = txHash ? `${txHash.slice(0, 18)}…` : "awaiting tx";
+  const blockDisplay = blockNumber !== null && blockNumber !== undefined
+    ? `#${blockNumber.toLocaleString()}`
+    : "—";
 
   return (
     <div
@@ -46,7 +51,7 @@ export function PrivacyProofDrawer({
             <div className="text-muted-foreground break-all">Data: {encryptedHandle}</div>
             <div className="text-muted-foreground">[Encrypted Payload]</div>
             <div className="pt-2 border-t border-border/60 text-[10px] text-muted-foreground">
-              tx {txHash.slice(0, 18)}… · block #{blockNumber.toLocaleString()}
+              tx {txDisplay} · block {blockDisplay}
             </div>
           </div>
         </div>
@@ -68,7 +73,7 @@ export function PrivacyProofDrawer({
               {amount.toLocaleString("en-US")} cUSDC
             </div>
             <div className="text-[10px] text-muted-foreground pt-2 border-t border-border/60 font-mono">
-              tx {txHash.slice(0, 18)}… · block #{blockNumber.toLocaleString()} · Authorized via Nox handle ACL
+              tx {txDisplay} · block {blockDisplay} · Authorized via Nox handle ACL
             </div>
           </div>
         </div>

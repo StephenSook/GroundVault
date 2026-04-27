@@ -33,6 +33,12 @@ export function useDepositFlow() {
   const [claimableDeposit, setClaimableDeposit] = useState<bigint | null>(null);
   const [shareBalance, setShareBalance] = useState<bigint | null>(null);
 
+  // Real tx hash + block of the most recent confidentialTransfer. Surfaced
+  // to the PrivacyProofDrawer so the public/private side-by-side panel
+  // shows a hash a viewer can actually copy into Arbiscan.
+  const [lastTxHash, setLastTxHash] = useState<string | null>(null);
+  const [lastBlockNumber, setLastBlockNumber] = useState<number | null>(null);
+
   const refresh = useCallback(async () => {
     if (!address || !sdk) return;
     try {
@@ -122,7 +128,11 @@ export function useDepositFlow() {
         transferEnc.handle,
         transferEnc.handleProof,
       );
-      await transferTx.wait();
+      const transferReceipt = await transferTx.wait();
+      setLastTxHash(transferTx.hash);
+      if (transferReceipt?.blockNumber !== undefined) {
+        setLastBlockNumber(Number(transferReceipt.blockNumber));
+      }
 
       // (2) Encrypted recordDeposit on the vault
       const recordEnc = await encryptUint256(sixDecimalsAmount, vaultAddr);
@@ -194,6 +204,8 @@ export function useDepositFlow() {
     pendingDeposit,
     claimableDeposit,
     shareBalance,
+    lastTxHash,
+    lastBlockNumber,
     wrap,
     submitDeposit,
     finalize: submitDeposit, // alias for the original API

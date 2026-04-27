@@ -141,6 +141,8 @@ export default function Deposit() {
       <PrivacyProofDrawer
         amount={flow.amount}
         encryptedHandle={cusdcHandleLabel}
+        txHash={flow.lastTxHash}
+        blockNumber={flow.lastBlockNumber}
       />
     </div>
   );
