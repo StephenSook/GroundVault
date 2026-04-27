@@ -28,7 +28,7 @@ function errMsg(err: unknown): string {
 export function useDepositFlow() {
   const { address } = useWallet();
   const contracts = useContracts();
-  const { sdk, encryptUint256, decryptUint256 } = useHandleClient();
+  const { sdk, sdkError, encryptUint256, decryptUint256 } = useHandleClient();
 
   const [step, setStep] = useState<DepositStep>("wrap");
   const [busy, setBusy] = useState(false);
@@ -59,7 +59,24 @@ export function useDepositFlow() {
   const [lastBlockNumber, setLastBlockNumber] = useState<number | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!address || !sdk) return;
+    if (!address) return;
+
+    // SDK build failed — populate per-row errors instead of silently
+    // returning. The Deposit screen's PrivateRow then renders the SDK
+    // error inline next to each balance label, giving the user a
+    // second visible signal beyond the global sdkError banner.
+    if (!sdk) {
+      if (sdkError) {
+        setReadErrors({
+          cusdc: sdkError,
+          pending: sdkError,
+          claimable: sdkError,
+          shares: sdkError,
+        });
+      }
+      return;
+    }
+
     setRefreshing(true);
 
     try {
@@ -123,10 +140,25 @@ export function useDepositFlow() {
       } else {
         setStep("wrap");
       }
+    } catch (err) {
+      // Top-level catch — the inner per-handle handlers already wrap
+      // the contract reads + decrypts, so reaching here means an
+      // unexpected crash (e.g. ABI mismatch from a stale deployment.json,
+      // a TypeError in our own glue code). Mark every row as failed so
+      // the user sees something instead of the previous unhandled
+      // promise rejection that left the sidebar stuck on stale values.
+      console.error("deposit-flow refresh crashed:", err);
+      const msg = errMsg(err);
+      setReadErrors({
+        cusdc: msg,
+        pending: msg,
+        claimable: msg,
+        shares: msg,
+      });
     } finally {
       setRefreshing(false);
     }
-  }, [address, sdk, contracts, decryptUint256]);
+  }, [address, sdk, sdkError, contracts, decryptUint256]);
 
   useEffect(() => {
     refresh();
