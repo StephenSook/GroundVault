@@ -23,14 +23,20 @@ export interface DecryptedValue {
 export async function decryptUint256(
   client: HandleSdk,
   handle: string,
-): Promise<bigint | null> {
+): Promise<bigint> {
+  // Default-zero handle: the chain's encrypted-zero reference is the
+  // same bytes for every uninitialised slot, and we know the value is
+  // 0 without going to the TEE. This short-circuit is safe and
+  // expected — the UI renders "0.00 cUSDC" rather than "—".
   if (!handle || handle === "0x" || /^0x0+$/.test(handle)) return 0n;
-  try {
-    const result = await client.decrypt(handle as `0x${string}`);
-    return result.value as bigint;
-  } catch {
-    return null;
-  }
+  // Real handles go through the Nox TEE. Errors from this path are
+  // not silent-zero — they indicate the wallet's ACL was rejected,
+  // the TEE timed out, or the handle is malformed. Surface as a
+  // throw so the caller's per-handle try/catch can render the
+  // failure inline instead of treating "decrypt failed" as "value
+  // is zero".
+  const result = await client.decrypt(handle as `0x${string}`);
+  return result.value as bigint;
 }
 
 export async function encryptUint256(

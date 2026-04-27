@@ -20,7 +20,7 @@ interface HandleClientCtx {
   sdk: HandleSdk | null;
   sdkError: string | null;
   signer: Signer | null;
-  decryptUint256: (handle: string) => Promise<bigint | null>;
+  decryptUint256: (handle: string) => Promise<bigint>;
   encryptUint256: (
     value: bigint,
     applicationContract: `0x${string}`,
@@ -102,7 +102,17 @@ export function HandleClientProvider({ children }: { children: ReactNode }) {
       sdkError,
       signer,
       decryptUint256: async (handle: string) => {
-        if (!sdk) return null;
+        // Match encryptUint256: throw with the underlying SDK error so
+        // the caller's per-handle try/catch surfaces a real "read
+        // failed" inline message instead of silently treating null as
+        // an unknown-or-zero value the UI cannot distinguish.
+        if (!sdk) {
+          throw new Error(
+            sdkError
+              ? `Handle SDK not initialised: ${sdkError}`
+              : "Handle SDK not initialised — connect wallet first",
+          );
+        }
         return decryptUint256(sdk, handle);
       },
       encryptUint256: async (value: bigint, applicationContract: `0x${string}`) => {
