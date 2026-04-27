@@ -114,18 +114,28 @@ export default function Operator() {
         merged.sort((a, b) => b.log.blockNumber - a.log.blockNumber);
         const top = merged.slice(0, 25);
 
-        const enriched: ActivityEvent[] = await Promise.all(
-          top.map(async ({ kind, log }) => {
-            const block = await provider.getBlock(log.blockNumber);
-            return {
-              kind,
-              controller: String(log.args?.controller ?? ""),
-              txHash: log.transactionHash,
-              blockNumber: log.blockNumber,
-              timestamp: Number(block?.timestamp ?? 0),
-            };
+        // Deduplicate getBlock fetches by block number — multiple
+        // events in the same block share one timestamp and there's
+        // no point hammering the public RPC with redundant calls.
+        // Cuts the call count from up to 25 down to typically <10
+        // and keeps the dashboard responsive on shared free-tier
+        // RPCs that throttle aggressive bursts.
+        const uniqueBlocks = [...new Set(top.map((t) => t.log.blockNumber))];
+        const blockMap = new Map<number, number>();
+        await Promise.all(
+          uniqueBlocks.map(async (n) => {
+            const block = await provider.getBlock(n);
+            blockMap.set(n, Number(block?.timestamp ?? 0));
           }),
         );
+
+        const enriched: ActivityEvent[] = top.map(({ kind, log }) => ({
+          kind,
+          controller: String(log.args?.controller ?? ""),
+          txHash: log.transactionHash,
+          blockNumber: log.blockNumber,
+          timestamp: blockMap.get(log.blockNumber) ?? 0,
+        }));
         if (!cancelled) setEvents(enriched);
 
         // Role grants — read RoleGranted events for OPERATOR_ROLE and
@@ -324,7 +334,7 @@ function RoleList({ title, members, description }: { title: string; members: str
       {members === null ? (
         <Skeleton className="h-5 w-full" />
       ) : members.length === 0 ? (
-        <div className="text-xs text-muted-foreground">No grants in this window. Grants from contract-construction time are not surfaced here (they predate the lookback).</div>
+        <div className="text-xs text-muted-foreground">No RoleGranted events in the lookback window.</div>
       ) : (
         <ul className="space-y-1">
           {members.map((addr) => (
@@ -341,6 +351,14 @@ function RoleList({ title, members, description }: { title: string; members: str
           ))}
         </ul>
       )}
+      {/* Always-visible caveat: constructor-time role assignments
+          (the deployer's own grants) emit RoleGranted at deployment
+          which is outside the lookback window. The list above shows
+          only grants events emitted within the last ~34h, so the
+          deployer may not appear even when actually privileged. */}
+      <p className="text-[10px] text-muted-foreground/70 mt-2 italic">
+        Shows RoleGranted events in the lookback window only. Constructor-time grants (e.g. the deployer) predate this window and may not appear above.
+      </p>
     </div>
   );
 }
