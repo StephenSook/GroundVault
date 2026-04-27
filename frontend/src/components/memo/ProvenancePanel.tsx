@@ -1,8 +1,13 @@
 import { ExternalLink, ShieldCheck } from "lucide-react";
 import type { MemoProvenance } from "@/types";
 import { Button } from "@/components/ui/button";
+import { useContracts } from "@/hooks/useContracts";
 
 export function ProvenancePanel({ provenance }: { provenance: MemoProvenance }) {
+  const { housingRegistry } = useContracts();
+  const registryAddr = housingRegistry.target as string;
+  const arbiscanUrl = `https://sepolia.arbiscan.io/address/${registryAddr}#readContract`;
+
   return (
     <aside className="rounded-lg border border-border bg-card p-6 space-y-5 sticky top-20">
       <div className="flex items-center gap-2 pb-4 border-b border-border">
@@ -13,7 +18,8 @@ export function ProvenancePanel({ provenance }: { provenance: MemoProvenance }) 
       <Field label="Generator" value={provenance.generator} indicator />
       <Field label="Timestamp (UTC)" value={provenance.timestampUtc} mono />
       <Field label="On-chain hash (keccak256)" value={provenance.onChainHash} mono chip />
-      <Field label="Storage URI" value={provenance.storageUri} link />
+      <Field label="Storage URI" value={provenance.storageUri || "—"} mono />
+      <Field label="Registry contract" value={registryAddr} mono chip />
 
       <div className="rounded-md bg-verified/40 border border-sage/40 p-3 flex items-start gap-2">
         <ShieldCheck className="h-4 w-4 text-verified-foreground mt-0.5" />
@@ -25,8 +31,10 @@ export function ProvenancePanel({ provenance }: { provenance: MemoProvenance }) 
         </div>
       </div>
 
-      <Button variant="outline" className="w-full">
-        View on Arbiscan <ExternalLink className="h-3.5 w-3.5" />
+      <Button asChild variant="outline" className="w-full">
+        <a href={arbiscanUrl} target="_blank" rel="noopener noreferrer">
+          View on Arbiscan <ExternalLink className="h-3.5 w-3.5" />
+        </a>
       </Button>
     </aside>
   );
