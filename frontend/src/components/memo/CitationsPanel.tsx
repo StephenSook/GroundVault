@@ -38,11 +38,11 @@ const CITATIONS: Citation[] = [
   {
     id: "ncrc-2025",
     category: "Atlanta displacement",
-    title: "Gentrification & Disparate Impact in Atlanta",
+    title: "Gentrification and Disinvestment 2020",
     source: "National Community Reinvestment Coalition (NCRC)",
     url: "https://ncrc.org/gentrification20/",
     takeaway:
-      "22,149 Black residents displaced from 16 majority-Black Atlanta census tracts between 1980 and 2020.",
+      "National framework for measuring gentrification and Black-resident displacement across U.S. metros, with Atlanta among the highest-displacement cohorts.",
   },
   {
     id: "lincoln-clt",
@@ -74,11 +74,11 @@ const CITATIONS: Citation[] = [
   {
     id: "wired-realt",
     category: "Predatory acquisition",
-    title: "Detroit's Tokenized Real Estate Crisis",
-    source: "WIRED, 2024",
-    url: "https://www.wired.com/story/realt-detroit-tokenized-real-estate/",
+    title: "WIRED coverage of RealT in Detroit",
+    source: "WIRED Magazine search archive",
+    url: "https://www.wired.com/search/?q=RealT+Detroit",
     takeaway:
-      "RealT, the largest U.S. residential tokenization platform, accumulated ~500 buildings in Detroit; the city sued in 2024 over hundreds of blight violations.",
+      "RealT, the largest U.S. residential tokenization platform, accumulated ~500 buildings in Detroit. Detroit pursued enforcement action in 2024 over hundreds of blight violations across the platform's portfolio.",
   },
   {
     id: "fred-dgs10",
@@ -112,7 +112,7 @@ const CITATIONS: Citation[] = [
     category: "Confidential compute",
     title: "iExec Nox — TEE Confidential Execution",
     source: "iExec",
-    url: "https://docs.iex.ec/nox",
+    url: "https://docs.iex.ec/",
     takeaway:
       "TEE-based confidential compute layer for ERC-7984 handles. Audited by Halborn; Arbitrum Sepolia testnet support since 2025-11.",
   },
