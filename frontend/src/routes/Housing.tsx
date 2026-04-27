@@ -5,7 +5,7 @@ import { HudCostBurdenChart } from "@/components/housing/HudCostBurdenChart";
 import { AtlantaContextPanel } from "@/components/housing/AtlantaContextPanel";
 
 export default function Housing() {
-  const { data: opp } = useOpportunity("1");
+  const { data: opp, error, retry } = useOpportunity("1");
 
   const upcoming = [
     { name: "Adair Park Duplex", state: "Q3 Review" },
@@ -14,7 +14,7 @@ export default function Housing() {
 
   return (
     <div className="container py-12 space-y-10">
-      <PropertyCard opp={opp} />
+      <PropertyCard opp={opp} error={error} onRetry={retry} />
       <VaultFundingStrip />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

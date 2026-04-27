@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { useContracts } from "@/hooks/useContracts";
 import type { Opportunity } from "@/types";
@@ -18,13 +18,16 @@ export function useOpportunity(id: string | undefined) {
   const { housingRegistry } = useContracts();
 
   const [data, setData] = useState<Opportunity | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [retryToken, setRetryToken] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     const numericId = id ? Number(id) : 1;
 
     setIsLoading(true);
+    setError(null);
     (async () => {
       try {
         const op = await housingRegistry.getOpportunity(numericId);
@@ -50,9 +53,13 @@ export function useOpportunity(id: string | undefined) {
           affordability: `≤${op.amiTier.toString()}% AMI`,
           heroImage: FALLBACK_HERO,
         });
-      } catch (err) {
+        setError(null);
+      } catch (err: any) {
         console.error("useOpportunity error:", err);
-        if (!cancelled) setData(null);
+        if (!cancelled) {
+          setData(null);
+          setError(err?.shortMessage ?? err?.message ?? String(err));
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -61,12 +68,14 @@ export function useOpportunity(id: string | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [id, housingRegistry]);
+  }, [id, housingRegistry, retryToken]);
 
-  return { data, isLoading };
+  const retry = useCallback(() => setRetryToken((t) => t + 1), []);
+
+  return { data, error, isLoading, retry };
 }
 
 export function useOpportunities() {
-  const { data, isLoading } = useOpportunity("1");
-  return { data: data ? [data] : [], isLoading };
+  const { data, error, isLoading, retry } = useOpportunity("1");
+  return { data: data ? [data] : [], error, isLoading, retry };
 }

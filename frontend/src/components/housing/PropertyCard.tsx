@@ -1,9 +1,34 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { AlertTriangle, ArrowRight, Loader2, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Opportunity } from "@/types";
 
-export function PropertyCard({ opp }: { opp: Opportunity | null }) {
+interface PropertyCardProps {
+  opp: Opportunity | null;
+  error?: string | null;
+  onRetry?: () => void;
+}
+
+export function PropertyCard({ opp, error, onRetry }: PropertyCardProps) {
+  if (error) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 rounded-lg border border-destructive/40 bg-destructive/5 overflow-hidden">
+        <div className="aspect-[4/3] md:aspect-auto bg-muted" />
+        <div className="p-8 flex flex-col items-center justify-center text-center gap-3">
+          <AlertTriangle className="h-6 w-6 text-destructive" />
+          <div className="text-sm text-destructive font-medium">Could not load opportunity</div>
+          <div className="text-xs text-destructive/80 font-mono break-all max-w-sm">
+            {error.length > 200 ? `${error.slice(0, 200)}…` : error}
+          </div>
+          {onRetry && (
+            <Button onClick={onRetry} variant="outline" size="sm">
+              <RefreshCcw className="h-3.5 w-3.5" /> Retry
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
   if (!opp) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 rounded-lg border border-border bg-card overflow-hidden">
