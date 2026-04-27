@@ -35,6 +35,13 @@ export interface MemoProvenance {
   onChainHash: string;
   storageUri: string;
   verified: boolean;
+  /**
+   * Set when the on-chain memo was anchored over the local fallback
+   * memo (ChainGPT was unavailable at generation time). The
+   * ProvenancePanel renders a distinct "fallback memo anchored" badge
+   * for this case so the integrity story is honest about provenance.
+   */
+  isFallback?: boolean;
 }
 
 export interface ImpactMemo {

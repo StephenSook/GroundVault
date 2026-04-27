@@ -24,8 +24,22 @@ const FALLBACK: ImpactMemo = {
   },
 };
 
-async function fetchMemoBody(memoUri: string): Promise<string | null> {
+async function fetchMemoBody(memoUri: string, opportunityId: number): Promise<string | null> {
   if (!memoUri) return null;
+  // The "fallback" sentinel marks an on-chain anchor over the local
+  // fallback memo (ChainGPT was unavailable at generation). The body
+  // was stashed to localStorage by Memo.regenerate; re-read it here so
+  // the Provenance panel can render the body and verify the hash. If
+  // the operator wallet has cleared its storage or moved machines,
+  // localStorage will not have the body and we render the badge with
+  // a "body unavailable" note.
+  if (memoUri === "fallback") {
+    try {
+      return window.localStorage.getItem(`groundvault-fallback-memo:${opportunityId}`);
+    } catch {
+      return null;
+    }
+  }
   try {
     const url = memoUri.startsWith("ipfs://")
       ? memoUri.replace("ipfs://", "https://ipfs.io/ipfs/")
@@ -70,19 +84,21 @@ export function useImpactMemo(opportunityId: string | undefined) {
 
         const onChainHash: string = op.memoHash;
         const memoUri: string = op.memoUri;
+        const isFallback = memoUri === "fallback";
 
-        const body = await fetchMemoBody(memoUri);
+        const body = await fetchMemoBody(memoUri, numericId);
 
         if (!body) {
           setData({
             ...FALLBACK,
             opportunityId: numericId.toString(),
             provenance: {
-              generator: "Pending",
+              generator: isFallback ? "Local fallback (ChainGPT unavailable)" : "Pending",
               timestampUtc: new Date(Number(op.updatedAt) * 1000).toISOString().replace("T", " ").slice(0, 19) + "Z",
               onChainHash,
               storageUri: memoUri,
               verified: false,
+              isFallback,
             },
           });
           setError(null);
@@ -100,12 +116,13 @@ export function useImpactMemo(opportunityId: string | undefined) {
           preparedFor: "Prepared for the GroundVault investment committee.",
           sections: sections.length > 0 ? sections : [{ title: "Memo body", body }],
           provenance: {
-            generator: "ChainGPT Web3 LLM",
+            generator: isFallback ? "Local fallback (ChainGPT unavailable)" : "ChainGPT Web3 LLM",
             timestampUtc:
               new Date(Number(op.updatedAt) * 1000).toISOString().replace("T", " ").slice(0, 19) + "Z",
             onChainHash,
             storageUri: memoUri,
             verified,
+            isFallback,
           },
         });
         setError(null);

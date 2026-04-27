@@ -116,10 +116,25 @@ export default function Memo() {
         },
       );
       // Pinning step is stubbed — for the demo we anchor the hash with
-      // an empty memoUri. A production deployment would pin to IPFS
-      // first and pass the cid back here.
+      // either an empty memoUri (live ChainGPT memo, body would be
+      // pinned to IPFS in prod) or the literal "fallback" marker
+      // (local fallback memo, body stashed to localStorage so the
+      // Provenance panel can re-render and verify on a subsequent
+      // page load). A production deployment would replace both with
+      // a real IPFS cid.
+      const memoUri = result.source === "fallback" ? "fallback" : "";
+      if (result.source === "fallback") {
+        try {
+          window.localStorage.setItem(
+            `groundvault-fallback-memo:${numericId}`,
+            result.markdown,
+          );
+        } catch (e) {
+          console.warn("Could not stash fallback memo body in localStorage:", e);
+        }
+      }
       const overrides = await bumpedGasOverrides();
-      const tx = await housingRegistry.setMemo(numericId, result.hash, "", overrides);
+      const tx = await housingRegistry.setMemo(numericId, result.hash, memoUri, overrides);
       await tx.wait();
       const sourceLabel =
         result.source === "fallback"
