@@ -168,7 +168,18 @@ export default function Memo() {
             result.markdown,
           );
         } catch (e) {
+          // localStorage quota-full or private-mode browser. The hash
+          // would still anchor on chain, but the body would be lost
+          // and ProvenancePanel would later read "tamper alert"
+          // because keccak(empty) != on-chain hash. Surface this as a
+          // visible warning so the operator can decide whether to
+          // proceed or abort.
           console.warn("Could not stash fallback memo body in localStorage:", e);
+          toast({
+            title: "Fallback memo body could not be saved",
+            description:
+              "Browser storage rejected the write. The on-chain hash will still anchor, but Provenance verification on a future page load will read as tampered.",
+          });
         }
       }
       setRegenStep("anchoring");

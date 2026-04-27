@@ -65,7 +65,15 @@ interface JargonProps {
 export function Jargon({ term, children }: JargonProps) {
   const key = (term ?? (typeof children === "string" ? children : "")) as string;
   const entry = GLOSSARY[key];
-  if (!entry) return <>{children}</>;
+  if (!entry) {
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `Jargon: no glossary entry for term ${JSON.stringify(key)} — child rendered as plain text`,
+      );
+    }
+    return <>{children}</>;
+  }
   return (
     <Tooltip>
       <TooltipTrigger asChild>

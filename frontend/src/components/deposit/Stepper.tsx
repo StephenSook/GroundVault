@@ -39,9 +39,22 @@ export function Stepper({ order, currentIndex }: StepperProps) {
               )}
             >
               {done ? (
-                <Check className="h-4 w-4 animate-in zoom-in-50 duration-300" />
+                // The `key` is tied to the done state so React remounts
+                // this element when a step flips from pending to done,
+                // re-firing the zoom-in animation. Without the key,
+                // React reuses the DOM node and the CSS animation does
+                // not replay.
+                <Check
+                  key={`check-${i}`}
+                  className="h-4 w-4 animate-in zoom-in-50 duration-300"
+                />
               ) : (
-                <span className="animate-in fade-in duration-200">{i + 1}</span>
+                <span
+                  key={`num-${i}-${current ? "active" : "future"}`}
+                  className="animate-in fade-in duration-200"
+                >
+                  {i + 1}
+                </span>
               )}
               {current && (
                 <span
