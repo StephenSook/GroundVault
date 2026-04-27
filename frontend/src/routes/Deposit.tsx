@@ -126,6 +126,7 @@ export default function Deposit() {
               amount={flow.amount}
               rwaId={opp?.rwaId}
               address={opp?.address}
+              listPriceUsd={opp?.targetPrice}
               onClaim={flow.claim}
               onReset={flow.reset}
             />
