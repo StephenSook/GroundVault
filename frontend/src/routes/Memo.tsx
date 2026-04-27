@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { generateMemo } from "@/lib/api/chaingpt";
 import { fetchCostBurden } from "@/lib/api/hud";
 import { fetchLatestRate } from "@/lib/api/fred";
+import { bumpedGasOverrides } from "@/lib/gasOverrides";
 
 import { MemoBody } from "@/components/memo/MemoBody";
 import { ProvenancePanel } from "@/components/memo/ProvenancePanel";
@@ -108,7 +109,8 @@ export default function Memo() {
       // Pinning step is stubbed — for the demo we anchor the hash with
       // an empty memoUri. A production deployment would pin to IPFS
       // first and pass the cid back here.
-      const tx = await housingRegistry.setMemo(numericId, result.hash, "");
+      const overrides = await bumpedGasOverrides();
+      const tx = await housingRegistry.setMemo(numericId, result.hash, "", overrides);
       await tx.wait();
       const liveTag = fallbacks.length === 0 ? "live data" : "mixed live + fallback data";
       toast({

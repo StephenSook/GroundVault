@@ -4,6 +4,7 @@ import { useContracts } from "@/hooks/useContracts";
 import { useHandleClient } from "@/hooks/useHandleClient";
 import { useWallet } from "@/hooks/useWallet";
 import { toast } from "@/hooks/use-toast";
+import { bumpedGasOverrides } from "@/lib/gasOverrides";
 import type { DepositStep } from "@/types";
 
 const ORDER: DepositStep[] = ["wrap", "request", "pending", "claim"];
@@ -132,16 +133,17 @@ export function useDepositFlow() {
     try {
       const cusdcAddr = await contracts.cusdc.getAddress();
       const sixDecimalsAmount = BigInt(Math.floor(amount * 1_000_000));
+      const overrides = await bumpedGasOverrides();
 
       // Mint mUSDC to self (deployer-only on the deployed MockUSDC; demo
       // wallet is the deployer so this works in scope).
-      const mintTx = await contracts.mockUsdc.mint(address, sixDecimalsAmount);
+      const mintTx = await contracts.mockUsdc.mint(address, sixDecimalsAmount, overrides);
       await mintTx.wait();
 
-      const approveTx = await contracts.mockUsdc.approve(cusdcAddr, sixDecimalsAmount);
+      const approveTx = await contracts.mockUsdc.approve(cusdcAddr, sixDecimalsAmount, overrides);
       await approveTx.wait();
 
-      const wrapTx = await contracts.cusdc.wrap(sixDecimalsAmount);
+      const wrapTx = await contracts.cusdc.wrap(sixDecimalsAmount, overrides);
       await wrapTx.wait();
 
       toast({ title: "Wrapped", description: `${amount} mUSDC → encrypted cUSDC` });
@@ -164,6 +166,7 @@ export function useDepositFlow() {
       const cusdcAddr = (await contracts.cusdc.getAddress()) as `0x${string}`;
       const vaultAddr = (await contracts.vault.getAddress()) as `0x${string}`;
       const sixDecimalsAmount = BigInt(Math.floor(amount * 1_000_000));
+      const overrides = await bumpedGasOverrides();
 
       // (1) Encrypted transfer cUSDC -> vault
       const transferEnc = await encryptUint256(sixDecimalsAmount, cusdcAddr);
@@ -171,6 +174,7 @@ export function useDepositFlow() {
         vaultAddr,
         transferEnc.handle,
         transferEnc.handleProof,
+        overrides,
       );
       const transferReceipt = await transferTx.wait();
       setLastTxHash(transferTx.hash);
@@ -183,6 +187,7 @@ export function useDepositFlow() {
       const recordTx = await contracts.vault.recordDeposit(
         recordEnc.handle,
         recordEnc.handleProof,
+        overrides,
       );
       await recordTx.wait();
 
@@ -193,7 +198,7 @@ export function useDepositFlow() {
       // Hackathon demo: deployer wallet holds OPERATOR_ROLE, advance
       // pending -> claimable inline so the stepper doesn't sit waiting.
       try {
-        const processTx = await contracts.vault.processDeposit(address);
+        const processTx = await contracts.vault.processDeposit(address, overrides);
         await processTx.wait();
         toast({ title: "Processed", description: "Operator advanced your deposit to claimable" });
         await refresh();
@@ -216,7 +221,8 @@ export function useDepositFlow() {
     setBusy(true);
     setError(null);
     try {
-      const tx = await contracts.vault.claimDeposit();
+      const overrides = await bumpedGasOverrides();
+      const tx = await contracts.vault.claimDeposit(overrides);
       await tx.wait();
       toast({ title: "Shares claimed", description: "Encrypted vault shares minted" });
       await refresh();
