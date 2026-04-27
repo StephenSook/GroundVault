@@ -16,6 +16,7 @@ import { bumpedGasOverrides } from "@/lib/gasOverrides";
 import { MemoBody } from "@/components/memo/MemoBody";
 import { ProvenancePanel } from "@/components/memo/ProvenancePanel";
 import { CitationsPanel } from "@/components/memo/CitationsPanel";
+import { AuditLog } from "@/components/memo/AuditLog";
 import { Button } from "@/components/ui/button";
 import { Jargon } from "@/components/shared/Jargon";
 
@@ -290,6 +291,7 @@ export default function Memo() {
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
         <div className="space-y-8">
           {memo ? <MemoBody memo={memo} /> : <div />}
+          <AuditLog opportunityId={numericId} />
           <CitationsPanel />
         </div>
         {memo?.provenance ? (
