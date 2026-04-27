@@ -111,3 +111,33 @@
     font-family: 'IBM Plex Mono', ui-monospace, monospace;
   }
 }
+
+/* Print stylesheet — used when an operator clicks "Download PDF" on
+   the Memo screen and the browser opens its Save-as-PDF dialog.
+   Strips the dapp chrome (banner, top-nav, footer, fixed bars) so
+   the memo body renders as a clean institutional report. */
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  [data-print-hidden],
+  header,
+  footer,
+  .fixed {
+    display: none !important;
+  }
+  .container {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+  [class*="grid-cols-"] {
+    display: block !important;
+  }
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+  section, article {
+    page-break-inside: avoid;
+  }
+}

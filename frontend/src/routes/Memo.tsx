@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { AlertTriangle, ChevronRight, Loader2, RefreshCcw, RefreshCw, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ChevronRight, Download, Loader2, RefreshCcw, RefreshCw, ShieldCheck } from "lucide-react";
 import { keccak256, toUtf8Bytes } from "ethers";
 
 import { useImpactMemo } from "@/hooks/useMemo";
@@ -251,6 +251,17 @@ export default function Memo() {
           <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-mono">
             Arbitrum Sepolia
           </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.print()}
+            className="ml-2"
+            data-print-hidden
+            title="Print or save as PDF"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Save PDF</span>
+          </Button>
         </div>
       </nav>
 
