@@ -15,6 +15,7 @@ import Deposit from "@/routes/Deposit";
 import Housing from "@/routes/Housing";
 import Memo from "@/routes/Memo";
 import NotFound from "./pages/NotFound";
+import { DepositGate } from "@/components/deposit/DepositGate";
 
 const queryClient = new QueryClient();
 
@@ -25,9 +26,18 @@ function HomeRedirect() {
 }
 
 function DepositGuard() {
-  const { address } = useWallet();
+  const { address, isConnected, connect } = useWallet();
   const { status } = useIdentityStatus(address);
-  if (status !== "verified") return <Navigate to="/verify" replace />;
+  if (status !== "verified") {
+    return (
+      <DepositGate
+        isConnected={isConnected}
+        address={address}
+        status={status}
+        onConnect={connect}
+      />
+    );
+  }
   return <Deposit />;
 }
 
