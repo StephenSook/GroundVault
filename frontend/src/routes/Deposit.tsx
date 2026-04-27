@@ -109,24 +109,28 @@ export default function Deposit() {
               handle={cusdcHandleLabel}
               decrypted={formatUnits6(flow.cusdcBalance, "cUSDC")}
               authorized={isConnected}
+              error={flow.readErrors.cusdc}
             />
             <PrivateRow
               label="Pending deposit"
               handle={vaultHandleLabel}
               decrypted={formatUnits6(flow.pendingDeposit, "cUSDC")}
               authorized={isConnected}
+              error={flow.readErrors.pending}
             />
             <PrivateRow
               label="Claimable shares"
               handle={vaultHandleLabel}
               decrypted={formatUnits6(flow.claimableDeposit, "cUSDC")}
               authorized={isConnected}
+              error={flow.readErrors.claimable}
             />
             <PrivateRow
               label="GVT shares held"
               handle={shareHandleLabel}
               decrypted={formatGvt18(flow.shareBalance)}
               authorized={isConnected}
+              error={flow.readErrors.shares}
             />
           </div>
           <button
@@ -153,21 +157,30 @@ function PrivateRow({
   handle,
   decrypted,
   authorized,
+  error,
 }: {
   label: string;
   handle: string;
   decrypted: string;
   authorized: boolean;
+  error?: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <EncryptedValue
-        handle={handle}
-        decrypted={decrypted}
-        authorized={authorized}
-        variant="inline"
-      />
+    <div className="space-y-1">
+      <div className="flex items-center justify-between gap-4 text-sm">
+        <span className="text-muted-foreground">{label}</span>
+        <EncryptedValue
+          handle={handle}
+          decrypted={error ? "read failed" : decrypted}
+          authorized={authorized}
+          variant="inline"
+        />
+      </div>
+      {error && (
+        <div className="text-[10px] text-destructive/80 font-mono break-all pl-1">
+          {error.length > 120 ? `${error.slice(0, 120)}…` : error}
+        </div>
+      )}
     </div>
   );
 }

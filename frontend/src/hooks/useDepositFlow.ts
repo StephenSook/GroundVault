@@ -8,6 +8,12 @@ import type { DepositStep } from "@/types";
 
 const ORDER: DepositStep[] = ["wrap", "request", "pending", "claim"];
 
+function errMsg(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === "object" && "shortMessage" in err) return String((err as any).shortMessage);
+  return String(err);
+}
+
 /**
  * Drives the four-state deposit lifecycle against the live Arbitrum
  * Sepolia contracts.
@@ -33,6 +39,17 @@ export function useDepositFlow() {
   const [claimableDeposit, setClaimableDeposit] = useState<bigint | null>(null);
   const [shareBalance, setShareBalance] = useState<bigint | null>(null);
 
+  // Per-read error map for the four encrypted balance lookups. Lets the
+  // UI distinguish "Nox decrypt rejected" or "RPC reverted" from "value
+  // is genuinely zero" so a failed read does not silently advance the
+  // stepper based on stale state.
+  const [readErrors, setReadErrors] = useState<{
+    cusdc?: string;
+    pending?: string;
+    claimable?: string;
+    shares?: string;
+  }>({});
+
   // Real tx hash + block of the most recent confidentialTransfer. Surfaced
   // to the PrivacyProofDrawer so the public/private side-by-side panel
   // shows a hash a viewer can actually copy into Arbiscan.
@@ -41,39 +58,66 @@ export function useDepositFlow() {
 
   const refresh = useCallback(async () => {
     if (!address || !sdk) return;
-    try {
-      const [cusdcHandle, pendingHandle, claimableHandle, sharesHandle] = await Promise.all([
-        contracts.cusdc.confidentialBalanceOf(address) as Promise<string>,
-        contracts.vault.pendingDepositOf(address) as Promise<string>,
-        contracts.vault.claimableDepositOf(address) as Promise<string>,
-        contracts.shareToken.confidentialBalanceOf(address) as Promise<string>,
-      ]);
-      const [cusdc, pending, claimable, shares] = await Promise.all([
-        decryptUint256(cusdcHandle),
-        decryptUint256(pendingHandle),
-        decryptUint256(claimableHandle),
-        decryptUint256(sharesHandle),
-      ]);
-      setCusdcBalance(cusdc);
-      setPendingDeposit(pending);
-      setClaimableDeposit(claimable);
-      setShareBalance(shares);
 
-      // Auto-advance the stepper based on chain state. Order matters —
-      // claimable first so the user lands on the actionable step rather
-      // than a "you have shares" terminal screen when there's still
-      // unfinished work in the queue.
-      if ((claimable ?? 0n) > 0n) {
-        setStep("claim");
-      } else if ((pending ?? 0n) > 0n) {
-        setStep("pending");
-      } else if ((cusdc ?? 0n) > 0n) {
-        setStep("request");
-      } else {
-        setStep("wrap");
+    // Read all four encrypted balances independently so that one failed
+    // chain call or one ACL-rejected handle does not poison the others.
+    // The previous Promise.all was an all-or-nothing barrier — any single
+    // reject left the entire balance state stale, the catch logged to
+    // console only, and the stepper sat on whatever step it was on with
+    // no signal to the user that the read had failed.
+    const handles = await Promise.allSettled([
+      contracts.cusdc.confidentialBalanceOf(address) as Promise<string>,
+      contracts.vault.pendingDepositOf(address) as Promise<string>,
+      contracts.vault.claimableDepositOf(address) as Promise<string>,
+      contracts.shareToken.confidentialBalanceOf(address) as Promise<string>,
+    ]);
+
+    const decryptIfOk = async (h: PromiseSettledResult<string>) => {
+      if (h.status === "rejected") return { ok: false as const, err: errMsg(h.reason) };
+      try {
+        const v = await decryptUint256(h.value);
+        return { ok: true as const, value: v };
+      } catch (e) {
+        return { ok: false as const, err: errMsg(e) };
       }
-    } catch (err) {
-      console.error("deposit-flow refresh error", err);
+    };
+
+    const [cusdcRes, pendingRes, claimableRes, sharesRes] = await Promise.all(
+      handles.map(decryptIfOk),
+    );
+
+    const errs: typeof readErrors = {};
+    if (!cusdcRes.ok) errs.cusdc = cusdcRes.err;
+    if (!pendingRes.ok) errs.pending = pendingRes.err;
+    if (!claimableRes.ok) errs.claimable = claimableRes.err;
+    if (!sharesRes.ok) errs.shares = sharesRes.err;
+    setReadErrors(errs);
+
+    if (cusdcRes.ok) setCusdcBalance(cusdcRes.value);
+    if (pendingRes.ok) setPendingDeposit(pendingRes.value);
+    if (claimableRes.ok) setClaimableDeposit(claimableRes.value);
+    if (sharesRes.ok) setShareBalance(sharesRes.value);
+
+    // Only auto-advance the stepper when every read succeeded. Advancing
+    // on partial state would push users to a screen that does not match
+    // their actual chain position (e.g. landing on "claim" because the
+    // claimable handle returned 0 while the pending read silently
+    // rejected and is therefore unknown).
+    const allOk = cusdcRes.ok && pendingRes.ok && claimableRes.ok && sharesRes.ok;
+    if (!allOk) return;
+
+    const cusdc = cusdcRes.ok ? cusdcRes.value : null;
+    const pending = pendingRes.ok ? pendingRes.value : null;
+    const claimable = claimableRes.ok ? claimableRes.value : null;
+
+    if ((claimable ?? 0n) > 0n) {
+      setStep("claim");
+    } else if ((pending ?? 0n) > 0n) {
+      setStep("pending");
+    } else if ((cusdc ?? 0n) > 0n) {
+      setStep("request");
+    } else {
+      setStep("wrap");
     }
   }, [address, sdk, contracts, decryptUint256]);
 
@@ -204,6 +248,7 @@ export function useDepositFlow() {
     pendingDeposit,
     claimableDeposit,
     shareBalance,
+    readErrors,
     lastTxHash,
     lastBlockNumber,
     wrap,
