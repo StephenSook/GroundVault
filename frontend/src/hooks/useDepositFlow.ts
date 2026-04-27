@@ -209,9 +209,30 @@ export function useDepositFlow() {
         toast({ title: "Processed", description: "Operator advanced your deposit to claimable" });
         await refresh();
         setStep("claim");
-      } catch (err) {
-        // Non-operator wallet: leave it pending and let an admin run process.
-        console.info("processDeposit not callable by this wallet — leaving pending");
+      } catch (err: any) {
+        // Distinguish "this wallet is not the operator" from any other
+        // failure mode. Suppressing every error here meant a chain
+        // re-org, signer rotation, gas estimation failure, or vault
+        // pause all produced an identical "leave it pending" with no
+        // visible feedback — the screen sat quietly while something
+        // had actually broken. Only soft-suppress access-control
+        // reverts; anything else re-throws to the outer catch which
+        // surfaces "Deposit failed" toast.
+        const msg = String(err?.shortMessage ?? err?.message ?? err).toLowerCase();
+        const isRoleError =
+          msg.includes("accesscontrol") ||
+          msg.includes("operator_role") ||
+          msg.includes("missing role") ||
+          msg.includes("unauthorized") ||
+          msg.includes("0xe2517d3f"); // AccessControlUnauthorizedAccount selector
+        if (isRoleError) {
+          toast({
+            title: "Awaiting operator",
+            description: "Your wallet is not the vault operator. An admin needs to run processDeposit to advance the queue.",
+          });
+          return;
+        }
+        throw err;
       }
     } catch (err: any) {
       console.error(err);
