@@ -112,10 +112,15 @@ export default function Memo() {
       const overrides = await bumpedGasOverrides();
       const tx = await housingRegistry.setMemo(numericId, result.hash, "", overrides);
       await tx.wait();
-      const liveTag = fallbacks.length === 0 ? "live data" : "mixed live + fallback data";
+      const sourceLabel =
+        result.source === "fallback"
+          ? "fallback memo (ChainGPT unavailable)"
+          : fallbacks.length === 0
+            ? "live ChainGPT memo"
+            : "live ChainGPT memo with fallback HUD/FRED data";
       toast({
         title: "Memo regenerated",
-        description: `On-chain hash anchored over ${liveTag}.`,
+        description: `On-chain hash anchored over ${sourceLabel}.`,
       });
     } catch (err: any) {
       console.error(err);

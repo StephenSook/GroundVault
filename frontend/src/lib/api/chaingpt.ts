@@ -120,23 +120,91 @@ async function callDirect(
     .trim();
 }
 
+/**
+ * Programmatic fallback memo. Used when ChainGPT is unavailable
+ * (insufficient credits, rate limit, network failure) so the demo
+ * recording can complete end-to-end with a real on-chain anchor over
+ * a real-data narrative — just without the LLM generation step.
+ *
+ * The body is composed from the same opportunity + context inputs the
+ * live prompt would have used, so HUD CHAS cost-burden and FRED
+ * DGS10 numbers are still live data. The narrative is hand-built
+ * but flagged in the body so a viewer reading the memo can tell it
+ * came from the fallback path. Anchoring the keccak256 of this body
+ * on chain still demonstrates the audit-trail mechanism.
+ */
+function buildFallbackMemo(
+  opportunity: Parameters<typeof buildPrompt>[0],
+  context: Parameters<typeof buildPrompt>[1],
+): string {
+  const treasury =
+    context.treasuryRatePct !== null
+      ? `${context.treasuryRatePct.toFixed(2)}% (10-year US Treasury, FRED DGS10)`
+      : "10-year Treasury benchmark (current rate unavailable)";
+  const list = opportunity.listPriceUsd.toLocaleString();
+
+  return `> Fallback memo — ChainGPT API unavailable. Body composed locally from live HUD CHAS + FRED data; on-chain hash still anchored to GroundVaultRegistry.
+
+## 1. Opportunity summary
+
+${opportunity.address} sits in ${opportunity.neighborhood}, an Atlanta neighborhood in Fulton County, GA. The property is offered by ${opportunity.operator} under a permanent affordability covenant restricting ownership to households earning ≤${opportunity.amiTier}% of Area Median Income. List price is $${list} USD.
+
+The acquisition is part of the Trust at Oakland City mixed-income development, in which roughly half of the units are permanently affordable and half are market-rate, co-developed by Atlanta Land Trust, Cityscape Housing, and Intown Builders with Atlanta BeltLine support.
+
+## 2. Financial benchmark
+
+The risk-free benchmark used for this evaluation is ${treasury}. CLT-financed acquisition is not a yield-seeking position; the underwriting goal is preservation of permanent affordability rather than market-comparable return. The benchmark anchors the opportunity cost of capital for institutional impact investors evaluating an allocation to GroundVault.
+
+GroundVault deposits are denominated in confidential cUSDC (ERC-7984). Vault aggregate supply, individual investor positions, and pending acquisition capital are all encrypted at the chain level — a public chain reader sees only bytes32 handles. This eliminates the predatory front-running pattern that has cost mission-driven CLTs visible-treasury acquisition bids in the past.
+
+## 3. Social impact thesis
+
+${context.costBurdenSeverePct}% of Fulton County renters are severely cost-burdened (>50% of income on housing) per HUD's Comprehensive Housing Affordability Strategy data. Atlanta lost roughly 1,500 affordable units per year over the prior decade and saw 22,149 Black residents displaced from sixteen majority-Black census tracts between 1980 and 2020 (NCRC 2025).
+
+Each unit added to a Community Land Trust inventory is permanently removed from speculative resale, which directly counters that displacement pattern. CLT homes had foreclosure rates 80–90 percent below conventional during the 2007–2009 crisis (Lincoln Institute / Thaden 2010), and CLT residents save approximately $153,000 in housing costs over a 12-year hold versus market-rate (Grounded Solutions).
+
+## 4. Risk caveats
+
+GroundVault is a Reg D 506(c) **testnet prototype** deployed to Arbitrum Sepolia (chain id 421614). Mainnet readiness, SEC-grade compliance, and any production deployment require qualified securities counsel and full audits. Nothing in this memo, the deployed UI, or the supporting contracts represents a production-grade investment vehicle. ChainGPT-generated memos in production runs are non-binding research narratives, not investment advice.
+
+The deposit lifecycle (Wrap → confidentialTransfer → recordDeposit → processDeposit → claimDeposit) has been audited by ChainGPT's Smart Contract Auditor over all 11 production contracts; findings and remediations are recorded in the project's audits/ directory. The hackathon scope explicitly excludes IPFS pinning of memo bodies, multi-opportunity registries, and the cancelDepositTimeout refund flow.`;
+}
+
+const FALLBACK_TRIGGERS = [
+  "insufficient credits",
+  "rate limit",
+  "quota",
+  "429",
+  "ChainGPT not available",
+];
+
+function shouldFallback(err: unknown): boolean {
+  const msg = String((err as any)?.message ?? err ?? "").toLowerCase();
+  return FALLBACK_TRIGGERS.some((t) => msg.includes(t.toLowerCase()));
+}
+
 export async function generateMemo(
   opportunity: Parameters<typeof buildPrompt>[0],
   context: Parameters<typeof buildPrompt>[1],
-): Promise<{ markdown: string; hash: `0x${string}` }> {
+): Promise<{ markdown: string; hash: `0x${string}`; source: "chaingpt" | "fallback" }> {
   // Server proxy first (production path). Direct fallback for `vite dev`
-  // where /api/chaingpt is not served.
-  const proxied = await callServerProxy(opportunity, context);
-  const markdown = proxied ?? (await callDirect(opportunity, context));
-  return { markdown, hash: keccak256(toUtf8Bytes(markdown)) as `0x${string}` };
-}
-
-/**
- * Pin markdown to IPFS via a pinning service. The default scaffolds a
- * placeholder URI when no pinning credentials are configured — wire a
- * real Pinata / Web3.Storage / Filebase client in a follow-up commit
- * once Phase 5's pinning account is provisioned.
- */
-export async function pinMemoToIpfs(_markdown: string): Promise<string> {
-  return "ipfs://pending-pinning-service";
+  // where /api/chaingpt is not served. If both ChainGPT paths fail with
+  // a soft error the caller can still anchor a fallback memo.
+  try {
+    const proxied = await callServerProxy(opportunity, context);
+    const markdown = proxied ?? (await callDirect(opportunity, context));
+    return {
+      markdown,
+      hash: keccak256(toUtf8Bytes(markdown)) as `0x${string}`,
+      source: "chaingpt",
+    };
+  } catch (err) {
+    if (!shouldFallback(err)) throw err;
+    const markdown = buildFallbackMemo(opportunity, context);
+    return {
+      markdown,
+      hash: keccak256(toUtf8Bytes(markdown)) as `0x${string}`,
+      source: "fallback",
+    };
+  }
 }
