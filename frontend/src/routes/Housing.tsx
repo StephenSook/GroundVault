@@ -1,5 +1,6 @@
 import { useOpportunity } from "@/hooks/useOpportunity";
 import { PropertyCard } from "@/components/housing/PropertyCard";
+import { PropertyMap } from "@/components/housing/PropertyMap";
 import { VaultFundingStrip } from "@/components/housing/VaultFundingStrip";
 import { HudCostBurdenChart } from "@/components/housing/HudCostBurdenChart";
 import { AtlantaContextPanel } from "@/components/housing/AtlantaContextPanel";
@@ -15,6 +16,7 @@ export default function Housing() {
   return (
     <div className="container py-12 space-y-10">
       <PropertyCard opp={opp} error={error} onRetry={retry} />
+      <PropertyMap />
       <VaultFundingStrip />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
