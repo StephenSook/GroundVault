@@ -76,6 +76,8 @@ export default function Deposit() {
               setAmount={flow.setAmount}
               busy={flow.busy}
               onSubmit={flow.submitDeposit}
+              rwaId={opp?.rwaId}
+              address={opp?.address}
             />
           )}
           {flow.step === "pending" && (

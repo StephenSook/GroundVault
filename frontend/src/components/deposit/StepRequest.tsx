@@ -7,20 +7,24 @@ interface StepRequestProps {
   setAmount: (n: number) => void;
   busy: boolean;
   onSubmit: () => void;
+  rwaId?: string;
+  address?: string;
 }
 
-export function StepRequest({ amount, setAmount, busy, onSubmit }: StepRequestProps) {
+export function StepRequest({ amount, setAmount, busy, onSubmit, rwaId, address }: StepRequestProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="font-display text-2xl text-forest">Funding: 960 Lawton St SW</h2>
+          <h2 className="font-display text-2xl text-forest">
+            Funding: {address ?? "Loading…"}
+          </h2>
           <p className="text-sm text-muted-foreground mt-1">
             Select the amount of shielded cUSDC you wish to commit to this property.
           </p>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-md bg-secondary px-2.5 py-1 text-xs font-mono text-forest">
-          <Home className="h-3 w-3" /> RWA-042
+          <Home className="h-3 w-3" /> {rwaId ?? "—"}
         </span>
       </div>
 
