@@ -72,6 +72,24 @@ export default function Memo() {
         fetchCostBurden("13121"),
         fetchLatestRate("DGS10"),
       ]);
+
+      // Surface fallback-data usage to the operator before we anchor the
+      // hash. fetchCostBurden silently returns hardcoded numbers when the
+      // HUD bearer token is missing or the request fails; fetchLatestRate
+      // returns null when FRED is unreachable. Anchoring a memo over
+      // mixed live + fallback data without warning would silently commit
+      // a hash to chain that the provenance panel later renders as
+      // "Verified", undermining the demo's audit-trail claim.
+      const fallbacks: string[] = [];
+      if (costBurden.source !== "live") fallbacks.push("HUD CHAS (cost burden)");
+      if (treasury === null) fallbacks.push("FRED DGS10 (treasury rate)");
+      if (fallbacks.length > 0) {
+        toast({
+          title: "Generating memo with fallback data",
+          description: `Live source unavailable for: ${fallbacks.join(", ")}. The on-chain hash will commit to a memo built on fallback values.`,
+        });
+      }
+
       const result = await generateMemo(
         {
           address: opp.address,
@@ -90,7 +108,11 @@ export default function Memo() {
       // first and pass the cid back here.
       const tx = await housingRegistry.setMemo(numericId, result.hash, "");
       await tx.wait();
-      toast({ title: "Memo regenerated", description: "On-chain hash anchored" });
+      const liveTag = fallbacks.length === 0 ? "live data" : "mixed live + fallback data";
+      toast({
+        title: "Memo regenerated",
+        description: `On-chain hash anchored over ${liveTag}.`,
+      });
     } catch (err: any) {
       console.error(err);
       toast({ title: "Memo regenerate failed", description: err?.shortMessage ?? err?.message });
