@@ -14,6 +14,7 @@ import { PrivacyProofDrawer } from "@/components/deposit/PrivacyProofDrawer";
 import { EncryptedValue } from "@/components/shared/EncryptedValue";
 
 const SIX_DECIMALS = 1_000_000n;
+const EIGHTEEN_DECIMALS = 1_000_000_000_000_000_000n;
 
 function formatUnits6(v: bigint | null | undefined, suffix: string) {
   if (v === null || v === undefined) return "—";
@@ -25,11 +26,15 @@ function formatUnits6(v: bigint | null | undefined, suffix: string) {
 
 function formatGvt18(v: bigint | null | undefined) {
   if (v === null || v === undefined) return "—";
-  // Display GroundVaultToken in 6-decimal scale because the demo mints
-  // shares 1:1 against cUSDC (six decimals) — even though the share
-  // token has 18 decimals on chain, the value rendered to the investor
-  // tracks their cUSDC contribution.
-  return formatUnits6(v, "gvSHARE");
+  // GroundVaultToken is a standard-shape ERC20 with 18 decimals (the
+  // OpenZeppelin default). claimDeposit mints shares as the 18-decimal
+  // representation of the cUSDC contribution, so 50 cUSDC → 50e18 raw
+  // shares. Render 4 fractional places so the investor sees a clean
+  // "50.0000 gvSHARE" instead of an exponent.
+  const whole = v / EIGHTEEN_DECIMALS;
+  const frac = v % EIGHTEEN_DECIMALS;
+  const fracStr = frac.toString().padStart(18, "0").slice(0, 4);
+  return `${whole.toString()}.${fracStr} gvSHARE`;
 }
 
 export default function Deposit() {
