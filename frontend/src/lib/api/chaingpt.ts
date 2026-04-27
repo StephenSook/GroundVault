@@ -170,17 +170,57 @@ GroundVault is a Reg D 506(c) **testnet prototype** deployed to Arbitrum Sepolia
 The deposit lifecycle (Wrap → confidentialTransfer → recordDeposit → processDeposit → claimDeposit) has been audited by ChainGPT's Smart Contract Auditor over all 11 production contracts; findings and remediations are recorded in the project's audits/ directory. The hackathon scope explicitly excludes IPFS pinning of memo bodies, multi-opportunity registries, and the cancelDepositTimeout refund flow.`;
 }
 
-const FALLBACK_TRIGGERS = [
-  "insufficient credits",
-  "rate limit",
-  "quota",
-  "429",
-  "ChainGPT not available",
-];
-
+/**
+ * Decide whether a ChainGPT error should silently degrade to the local
+ * fallback memo. The previous policy was an opt-in allowlist of
+ * substrings ("insufficient credits", "rate limit", "quota", "429",
+ * "ChainGPT not available") which had two failure modes:
+ *
+ * 1. False positives — a 429 from the proxy itself (just rate-limited
+ *    by Vercel edge) would silently fall back, losing real ChainGPT
+ *    generation that a 30-second retry would fix. "quota" matched any
+ *    error message that contained the substring incidentally.
+ * 2. False negatives — HTTP 5xx from the ChainGPT upstream (server-
+ *    side outage, exactly the case fallback was built for) was a hard
+ *    error because the message did not match an allowlist substring.
+ *    "Failed to fetch" / "Network error" likewise hard-failed.
+ *
+ * The new policy parses the HTTP status code out of error messages of
+ * the form "ChainGPT HTTP 429: ...", then falls back only on:
+ * - HTTP 429 (rate limited)
+ * - HTTP 5xx (upstream outage, including missing CHAINGPT_API_KEY 500)
+ * - Network failures with no status (TypeError "Failed to fetch")
+ * - Literal "insufficient credits" string match (ChainGPT-specific
+ *   business-logic error that always wants the fallback)
+ *
+ * Everything else (4xx auth/validation errors, malformed responses)
+ * surfaces to the user as a hard "Memo regenerate failed" toast.
+ */
 function shouldFallback(err: unknown): boolean {
-  const msg = String((err as any)?.message ?? err ?? "").toLowerCase();
-  return FALLBACK_TRIGGERS.some((t) => msg.includes(t.toLowerCase()));
+  const msg = String((err as any)?.message ?? err ?? "");
+  const lower = msg.toLowerCase();
+
+  if (lower.includes("insufficient credits")) return true;
+
+  const statusMatch = msg.match(/HTTP\s+(\d{3})/i);
+  if (statusMatch) {
+    const status = parseInt(statusMatch[1], 10);
+    if (status === 429) return true;
+    if (status >= 500 && status <= 599) return true;
+    return false;
+  }
+
+  // No status was attached — most likely a network-layer rejection.
+  if (
+    lower.includes("failed to fetch") ||
+    lower.includes("network error") ||
+    lower.includes("econnrefused") ||
+    lower.includes("etimedout")
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 export async function generateMemo(
@@ -200,6 +240,11 @@ export async function generateMemo(
     };
   } catch (err) {
     if (!shouldFallback(err)) throw err;
+    // Log the original error before degrading so a demo recording or
+    // post-hoc review can tell what triggered the fallback. Without
+    // this line a flaky network blip and a real ChainGPT outage look
+    // identical from the screen capture.
+    console.error("ChainGPT call failed — using fallback memo:", err);
     const markdown = buildFallbackMemo(opportunity, context);
     return {
       markdown,
