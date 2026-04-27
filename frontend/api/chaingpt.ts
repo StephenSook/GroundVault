@@ -15,6 +15,11 @@ export const config = { runtime: "edge" };
 
 const CHAINGPT_ENDPOINT = "https://api.chaingpt.org/chat/stream";
 
+// Cap user-supplied string fields so a malicious caller cannot send
+// kilobyte-long opportunity descriptions and burn ChainGPT credits via
+// inflated prompt size.
+const MAX_STR = 200;
+
 interface OppShape {
   address: string;
   neighborhood: string;
@@ -26,6 +31,29 @@ interface OppShape {
 interface CtxShape {
   costBurdenSeverePct: number;
   treasuryRatePct: number | null;
+}
+
+// Origin allowlist for the proxy. The deployed Vercel preview matches
+// `*.vercel.app`; localhost is allowed so `vercel dev` can call the
+// proxy from the local app. A custom domain can be added at deploy
+// time via the ALLOWED_ORIGIN env var.
+const ALLOWED_HOST_SUFFIXES = [".vercel.app"];
+const ALLOWED_HOSTNAMES = new Set(["localhost"]);
+
+function isAllowedOrigin(req: Request): boolean {
+  const origin = req.headers.get("origin");
+  if (!origin) return false;
+  let url: URL;
+  try {
+    url = new URL(origin);
+  } catch {
+    return false;
+  }
+  if (ALLOWED_HOSTNAMES.has(url.hostname)) return true;
+  if (ALLOWED_HOST_SUFFIXES.some((s) => url.hostname.endsWith(s))) return true;
+  const extra = (globalThis as any).process?.env?.ALLOWED_ORIGIN as string | undefined;
+  if (extra && origin === extra) return true;
+  return false;
 }
 
 function buildPrompt(opp: OppShape, ctx: CtxShape): string {
@@ -64,12 +92,25 @@ function isValidPayload(body: any): body is { opportunity: OppShape; context: Ct
   const ctx = body.context;
   if (!opp || typeof opp !== "object") return false;
   if (!ctx || typeof ctx !== "object") return false;
-  if (typeof opp.address !== "string" || opp.address.length === 0) return false;
-  if (typeof opp.neighborhood !== "string") return false;
-  if (typeof opp.operator !== "string") return false;
+  if (
+    typeof opp.address !== "string" ||
+    opp.address.length === 0 ||
+    opp.address.length > MAX_STR
+  ) {
+    return false;
+  }
+  if (typeof opp.neighborhood !== "string" || opp.neighborhood.length > MAX_STR) return false;
+  if (typeof opp.operator !== "string" || opp.operator.length > MAX_STR) return false;
   if (typeof opp.amiTier !== "number" || opp.amiTier <= 0 || opp.amiTier > 200) return false;
-  if (typeof opp.listPriceUsd !== "number" || opp.listPriceUsd < 0) return false;
+  if (
+    typeof opp.listPriceUsd !== "number" ||
+    opp.listPriceUsd < 0 ||
+    opp.listPriceUsd > 1_000_000_000
+  ) {
+    return false;
+  }
   if (typeof ctx.costBurdenSeverePct !== "number") return false;
+  if (ctx.costBurdenSeverePct < 0 || ctx.costBurdenSeverePct > 100) return false;
   if (ctx.treasuryRatePct !== null && typeof ctx.treasuryRatePct !== "number") return false;
   return true;
 }
@@ -77,6 +118,10 @@ function isValidPayload(body: any): body is { opportunity: OppShape; context: Ct
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== "POST") {
     return jsonResponse(405, { error: "method not allowed" });
+  }
+
+  if (!isAllowedOrigin(req)) {
+    return jsonResponse(403, { error: "origin not allowed" });
   }
 
   const apiKey = (globalThis as any).process?.env?.CHAINGPT_API_KEY as string | undefined;

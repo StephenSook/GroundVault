@@ -12,7 +12,29 @@
 export const config = { runtime: "edge" };
 
 const FRED_BASE = "https://api.stlouisfed.org/fred/series/observations";
-const VALID_SERIES = /^[A-Za-z0-9]{1,16}$/;
+// FRED series IDs are at least 2 characters in practice (e.g. "M2",
+// "DGS10"). Tightened from {1,16} to avoid passing trivially-empty
+// inputs through to the upstream.
+const VALID_SERIES = /^[A-Za-z0-9]{2,16}$/;
+
+const ALLOWED_HOST_SUFFIXES = [".vercel.app"];
+const ALLOWED_HOSTNAMES = new Set(["localhost"]);
+
+function isAllowedOrigin(req: Request): boolean {
+  const origin = req.headers.get("origin");
+  if (!origin) return false;
+  let url: URL;
+  try {
+    url = new URL(origin);
+  } catch {
+    return false;
+  }
+  if (ALLOWED_HOSTNAMES.has(url.hostname)) return true;
+  if (ALLOWED_HOST_SUFFIXES.some((s) => url.hostname.endsWith(s))) return true;
+  const extra = (globalThis as any).process?.env?.ALLOWED_ORIGIN as string | undefined;
+  if (extra && origin === extra) return true;
+  return false;
+}
 
 function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -24,6 +46,10 @@ function jsonResponse(status: number, body: unknown): Response {
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== "GET") {
     return jsonResponse(405, { error: "method not allowed" });
+  }
+
+  if (!isAllowedOrigin(req)) {
+    return jsonResponse(403, { error: "origin not allowed" });
   }
 
   const apiKey = (globalThis as any).process?.env?.FRED_API_KEY as string | undefined;
