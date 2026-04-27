@@ -14,7 +14,6 @@ import { PrivacyProofDrawer } from "@/components/deposit/PrivacyProofDrawer";
 import { EncryptedValue } from "@/components/shared/EncryptedValue";
 
 const SIX_DECIMALS = 1_000_000n;
-const EIGHTEEN_DECIMALS = 1_000_000_000_000_000_000n;
 
 function formatUnits6(v: bigint | null | undefined, suffix: string) {
   if (v === null || v === undefined) return "—";
@@ -24,17 +23,19 @@ function formatUnits6(v: bigint | null | undefined, suffix: string) {
   return `${whole.toString()}.${fracStr} ${suffix}`;
 }
 
-function formatGvt18(v: bigint | null | undefined) {
+function formatGvtShares(v: bigint | null | undefined) {
   if (v === null || v === undefined) return "—";
-  // GroundVaultToken is a standard-shape ERC20 with 18 decimals (the
-  // OpenZeppelin default). claimDeposit mints shares as the 18-decimal
-  // representation of the cUSDC contribution, so 50 cUSDC → 50e18 raw
-  // shares. Render 4 fractional places so the investor sees a clean
-  // "50.0000 gvSHARE" instead of an exponent.
-  const whole = v / EIGHTEEN_DECIMALS;
-  const frac = v % EIGHTEEN_DECIMALS;
-  const fracStr = frac.toString().padStart(18, "0").slice(0, 4);
-  return `${whole.toString()}.${fracStr} gvSHARE`;
+  // GroundVaultCore.claimDeposit mints shares 1:1 in the SAME raw
+  // units as the vault's encrypted `claimable` handle, which itself
+  // was encoded from `BigInt(amount * 1_000_000)` during recordDeposit
+  // — i.e. cUSDC's 6-decimal scale. The share token nominally has 18
+  // decimals on chain, but no scale-up happens at mint time, so a
+  // 50 cUSDC deposit produces 50_000_000 raw share units. Rendering
+  // those raw units with the 6-decimal formatter shows "50.00 gvSHARE"
+  // matching the user's cUSDC contribution. A production deploy would
+  // either insert explicit `amount * 1e12` scaling in claimDeposit or
+  // change shareToken decimals to 6 — both contract changes.
+  return formatUnits6(v, "gvSHARE");
 }
 
 export default function Deposit() {
@@ -130,7 +131,7 @@ export default function Deposit() {
             <PrivateRow
               label="GVT shares held"
               handle={shareHandleLabel}
-              decrypted={formatGvt18(flow.shareBalance)}
+              decrypted={formatGvtShares(flow.shareBalance)}
               authorized={isConnected}
               error={flow.readErrors.shares}
             />
