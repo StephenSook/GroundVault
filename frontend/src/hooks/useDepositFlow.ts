@@ -124,18 +124,13 @@ export function useDepositFlow() {
       // their actual chain position (e.g. landing on "claim" because the
       // claimable handle returned 0 while the pending read silently
       // rejected and is therefore unknown).
-      const allOk = cusdcRes.ok && pendingRes.ok && claimableRes.ok && sharesRes.ok;
-      if (!allOk) return;
+      if (!cusdcRes.ok || !pendingRes.ok || !claimableRes.ok || !sharesRes.ok) return;
 
-      const cusdc = cusdcRes.ok ? cusdcRes.value : null;
-      const pending = pendingRes.ok ? pendingRes.value : null;
-      const claimable = claimableRes.ok ? claimableRes.value : null;
-
-      if ((claimable ?? 0n) > 0n) {
+      if (claimableRes.value > 0n) {
         setStep("claim");
-      } else if ((pending ?? 0n) > 0n) {
+      } else if (pendingRes.value > 0n) {
         setStep("pending");
-      } else if ((cusdc ?? 0n) > 0n) {
+      } else if (cusdcRes.value > 0n) {
         setStep("request");
       } else {
         setStep("wrap");

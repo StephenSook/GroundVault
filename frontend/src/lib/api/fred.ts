@@ -55,7 +55,10 @@ async function callServerProxy(seriesId: string): Promise<FredSeriesPoint[] | nu
 
 async function callDirect(seriesId: string): Promise<FredSeriesPoint[]> {
   const apiKey = import.meta.env.VITE_FRED_API_KEY as string | undefined;
-  if (!apiKey) return [];
+  if (!apiKey) {
+    console.warn("FRED direct: no VITE_FRED_API_KEY — treasury rate unavailable");
+    return [];
+  }
 
   try {
     const url =
@@ -63,15 +66,22 @@ async function callDirect(seriesId: string): Promise<FredSeriesPoint[]> {
       `&api_key=${encodeURIComponent(apiKey)}` +
       `&file_type=json&sort_order=desc&limit=30`;
     const res = await fetch(url);
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.warn(`FRED direct: HTTP ${res.status}`);
+      return [];
+    }
     const json = await res.json();
-    if (!Array.isArray(json.observations)) return [];
+    if (!Array.isArray(json.observations)) {
+      console.warn("FRED direct: response missing observations array");
+      return [];
+    }
 
     return json.observations
       .filter((o: any) => o.value !== "." && !Number.isNaN(Number(o.value)))
       .map((o: any) => ({ date: o.date as string, value: Number(o.value) }))
       .reverse();
-  } catch {
+  } catch (err) {
+    console.warn("FRED direct: fetch threw:", err);
     return [];
   }
 }

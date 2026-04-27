@@ -25,7 +25,10 @@ const BASE = "https://www.huduser.gov/hudapi/public/chas";
 
 export async function fetchCostBurden(countyFips: string = "13121"): Promise<CostBurdenBreakdown> {
   const token = import.meta.env.VITE_HUD_API_TOKEN as string | undefined;
-  if (!token) return FALLBACK;
+  if (!token) {
+    console.warn("HUD CHAS: no VITE_HUD_API_TOKEN — falling back to static numbers");
+    return FALLBACK;
+  }
 
   try {
     // CHAS endpoint: /chas?type=3&year=2017-2021&stateId=13&entityId=121
@@ -33,26 +36,38 @@ export async function fetchCostBurden(countyFips: string = "13121"): Promise<Cos
     const entityId = countyFips.slice(2);
     const url = `${BASE}?type=3&year=2017-2021&stateId=${stateId}&entityId=${entityId}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    if (!res.ok) return FALLBACK;
+    if (!res.ok) {
+      console.warn(`HUD CHAS: HTTP ${res.status} — falling back to static numbers`);
+      return FALLBACK;
+    }
     const json = await res.json();
 
     // The CHAS payload has dozens of fields; we read the renter-household
     // cost-burden tier shares (D9 family). The exact field names follow
     // the HUD documentation.
     const row = Array.isArray(json) ? json[0] : json;
-    if (!row) return FALLBACK;
+    if (!row) {
+      console.warn("HUD CHAS: empty response — falling back to static numbers");
+      return FALLBACK;
+    }
 
     const totalRenters = Number(row.B5_est ?? row.B5 ?? 0);
     const severelyBurdenedRenters = Number(row.B5C_est ?? row.B5C ?? 0);
     const moderatelyBurdenedRenters = Number(row.B5B_est ?? row.B5B ?? 0);
-    if (!totalRenters || totalRenters <= 0) return FALLBACK;
+    if (!totalRenters || totalRenters <= 0) {
+      console.warn(
+        "HUD CHAS: B5/B5_est missing or zero — payload shape may have changed; falling back to static numbers",
+      );
+      return FALLBACK;
+    }
 
     const sev = Math.round((severelyBurdenedRenters / totalRenters) * 100);
     const mod = Math.round((moderatelyBurdenedRenters / totalRenters) * 100);
     const not = Math.max(0, 100 - sev - mod);
 
     return { severelyBurdenedPct: sev, costBurdenedPct: mod, notBurdenedPct: not, source: "live" };
-  } catch {
+  } catch (err) {
+    console.warn("HUD CHAS: fetch threw — falling back to static numbers:", err);
     return FALLBACK;
   }
 }
