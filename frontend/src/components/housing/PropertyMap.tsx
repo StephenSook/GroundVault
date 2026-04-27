@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { ExternalLink, MapPin } from "lucide-react";
 
 // 960 Lawton St SW, Atlanta, GA 30310 — the Trust at Oakland City
@@ -17,6 +18,24 @@ const OSM_VIEW = `https://www.openstreetmap.org/?mlat=${LAT}&mlon=${LON}&zoom=16
 const GOOGLE_MAPS_VIEW = `https://www.google.com/maps/search/?api=1&query=${LAT},${LON}`;
 
 export function PropertyMap() {
+  // Track whether the OSM iframe loaded. If it doesn't fire `onLoad`
+  // within 5s — because the user's network blocks openstreetmap.org,
+  // an ad-blocker stripped the iframe, or a strict CSP rejected the
+  // frame — render a clean fallback panel so the map slot doesn't
+  // sit blank-grey for the whole demo.
+  const [loaded, setLoaded] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    timerRef.current = setTimeout(() => {
+      if (!loaded) setTimedOut(true);
+    }, 5000);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [loaded]);
+
   return (
     <div className="rounded-lg border border-border bg-card overflow-hidden">
       <div className="flex items-start justify-between gap-4 px-6 py-4">
@@ -54,14 +73,34 @@ export function PropertyMap() {
           </a>
         </div>
       </div>
-      <div className="h-72 w-full bg-muted">
-        <iframe
-          title={`Map of ${ADDRESS}`}
-          src={OSM_EMBED}
-          className="h-full w-full"
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-        />
+      <div className="relative h-72 w-full bg-muted">
+        {!timedOut && (
+          <iframe
+            title={`Map of ${ADDRESS}`}
+            src={OSM_EMBED}
+            className="h-full w-full"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            onLoad={() => setLoaded(true)}
+          />
+        )}
+        {timedOut && !loaded && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-muted text-center px-6">
+            <MapPin className="h-6 w-6 text-muted-foreground" />
+            <div className="text-sm font-medium">Map could not load</div>
+            <div className="text-xs text-muted-foreground max-w-xs">
+              The OpenStreetMap embed was blocked or unreachable. The pin coordinates and external links above still work.
+            </div>
+            <a
+              href={GOOGLE_MAPS_VIEW}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs text-forest hover:underline"
+            >
+              Open in Google Maps <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );
