@@ -1,12 +1,57 @@
-import { ExternalLink, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Clock, ExternalLink, ShieldCheck } from "lucide-react";
 import type { MemoProvenance } from "@/types";
 import { Button } from "@/components/ui/button";
 import { useContracts } from "@/hooks/useContracts";
+
+const ZERO_HASH = "0x" + "0".repeat(64);
+
+type IntegrityState = "pending" | "verified" | "tamper";
+
+function computeState(provenance: MemoProvenance): IntegrityState {
+  const hash = provenance.onChainHash?.toLowerCase() ?? "";
+  const isAnchored = hash.length > 0 && hash !== ZERO_HASH;
+  if (!isAnchored) return "pending";
+  return provenance.verified ? "verified" : "tamper";
+}
+
+const BADGE = {
+  pending: {
+    icon: Clock,
+    title: "Awaiting on-chain anchor",
+    body: "No impact memo hash has been anchored to GroundVaultRegistry yet. A wallet holding MEMO_ROLE can publish one via the regenerate bar at the bottom of this screen.",
+    container: "bg-warning/10 border-warning/40",
+    iconClass: "text-warning",
+    titleClass: "text-warning",
+    bodyClass: "text-warning/80",
+  },
+  verified: {
+    icon: ShieldCheck,
+    title: "Green Integrity Verified",
+    body: "The on-chain hash matches the keccak256 of the rendered memo body exactly. No tampering detected.",
+    container: "bg-verified/40 border-sage/40",
+    iconClass: "text-verified-foreground",
+    titleClass: "text-verified-foreground",
+    bodyClass: "text-verified-foreground/80",
+  },
+  tamper: {
+    icon: AlertTriangle,
+    title: "Tamper alert",
+    body: "The on-chain hash does not match the keccak256 of the rendered memo body. Treat this document as unverified until the chain anchor is reconciled.",
+    container: "bg-destructive/10 border-destructive/40",
+    iconClass: "text-destructive",
+    titleClass: "text-destructive",
+    bodyClass: "text-destructive/80",
+  },
+};
 
 export function ProvenancePanel({ provenance }: { provenance: MemoProvenance }) {
   const { housingRegistry } = useContracts();
   const registryAddr = housingRegistry.target as string;
   const arbiscanUrl = `https://sepolia.arbiscan.io/address/${registryAddr}#readContract`;
+
+  const state = computeState(provenance);
+  const badge = BADGE[state];
+  const Icon = badge.icon;
 
   return (
     <aside className="rounded-lg border border-border bg-card p-6 space-y-5 sticky top-20">
@@ -21,13 +66,11 @@ export function ProvenancePanel({ provenance }: { provenance: MemoProvenance }) 
       <Field label="Storage URI" value={provenance.storageUri || "—"} mono />
       <Field label="Registry contract" value={registryAddr} mono chip />
 
-      <div className="rounded-md bg-verified/40 border border-sage/40 p-3 flex items-start gap-2">
-        <ShieldCheck className="h-4 w-4 text-verified-foreground mt-0.5" />
+      <div className={`rounded-md ${badge.container} border p-3 flex items-start gap-2`}>
+        <Icon className={`h-4 w-4 ${badge.iconClass} mt-0.5`} />
         <div>
-          <div className="text-xs font-semibold text-verified-foreground">Green Integrity Verified</div>
-          <p className="text-[11px] text-verified-foreground/80 mt-0.5">
-            On-chain hash matches the local document buffer exactly. No tampering detected.
-          </p>
+          <div className={`text-xs font-semibold ${badge.titleClass}`}>{badge.title}</div>
+          <p className={`text-[11px] ${badge.bodyClass} mt-0.5`}>{badge.body}</p>
         </div>
       </div>
 
