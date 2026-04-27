@@ -17,13 +17,16 @@ const FALLBACK_RPC = "https://sepolia-rollup.arbitrum.io/rpc";
 export function useContracts() {
   const { data: walletClient } = useWalletClient();
   const [signer, setSigner] = useState<Signer | null>(null);
+  const [signerError, setSignerError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     if (!walletClient) {
       setSigner(null);
+      setSignerError(null);
       return;
     }
+    setSignerError(null);
     const provider = new BrowserProvider(walletClient.transport, {
       chainId: walletClient.chain.id,
       name: walletClient.chain.name,
@@ -31,10 +34,16 @@ export function useContracts() {
     provider
       .getSigner(walletClient.account.address)
       .then((s) => {
-        if (!cancelled) setSigner(s);
+        if (!cancelled) {
+          setSigner(s);
+          setSignerError(null);
+        }
       })
-      .catch(() => {
-        if (!cancelled) setSigner(null);
+      .catch((err) => {
+        if (!cancelled) {
+          setSigner(null);
+          setSignerError(err?.shortMessage ?? err?.message ?? String(err));
+        }
       });
     return () => {
       cancelled = true;
@@ -59,7 +68,13 @@ export function useContracts() {
       housingRegistry: make("GroundVaultRegistry"),
       router: make("GroundVaultRouter"),
       signer,
+      signerError,
+      // True when contracts can sign + send transactions. False means
+      // every contract is bound to the read-only fallback RPC and any
+      // write call (mint, approve, wrap, confidentialTransfer,
+      // recordDeposit, processDeposit, claimDeposit, setMemo) will
+      // throw before reaching the chain.
       hasSigner: signer !== null,
     };
-  }, [signer]);
+  }, [signer, signerError]);
 }

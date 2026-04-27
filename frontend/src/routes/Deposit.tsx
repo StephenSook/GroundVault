@@ -45,6 +45,7 @@ export default function Deposit() {
   const contracts = useContracts();
   const { data: opp } = useOpportunity("1");
   const { sdkError } = useHandleClient();
+  const signerError = contracts.signerError;
 
   const cusdcAddr = contracts.cusdc.target as string;
   const vaultAddr = contracts.vault.target as string;
@@ -78,6 +79,21 @@ export default function Deposit() {
             </div>
             <p className="text-[11px] text-destructive/70 mt-1">
               Encrypted balance reads will return em-dashes and any deposit submit will fail with "Handle SDK not initialised". Reconnect your wallet from the top-right to retry the SDK handshake.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {signerError && (
+        <div className="rounded-md border border-warning/40 bg-warning/5 px-4 py-3 flex items-start gap-3">
+          <AlertTriangle className="h-4 w-4 text-warning mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-warning">Wallet signer not available</div>
+            <div className="text-xs text-warning/80 font-mono break-all mt-0.5">
+              {signerError.length > 240 ? `${signerError.slice(0, 240)}…` : signerError}
+            </div>
+            <p className="text-[11px] text-warning/70 mt-1">
+              Reads can still complete via the public RPC, but every wrap / submit / claim transaction will throw before reaching the chain. Reconnect or switch accounts to rebuild the signer.
             </p>
           </div>
         </div>
