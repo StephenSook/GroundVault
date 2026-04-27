@@ -106,7 +106,7 @@ export default function Memo() {
         <ol className="flex items-center gap-2 text-muted-foreground">
           <li><Link to="/housing" className="hover:text-forest">Housing</Link></li>
           <ChevronRight className="h-3.5 w-3.5" />
-          <li><Link to={`/housing/${id}`} className="hover:text-forest">{breadcrumbAddress}</Link></li>
+          <li>{breadcrumbAddress}</li>
           <ChevronRight className="h-3.5 w-3.5" />
           <li className="text-foreground">Impact memo</li>
         </ol>
