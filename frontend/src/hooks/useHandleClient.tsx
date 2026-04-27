@@ -18,6 +18,7 @@ import {
 
 interface HandleClientCtx {
   sdk: HandleSdk | null;
+  sdkError: string | null;
   signer: Signer | null;
   decryptUint256: (handle: string) => Promise<bigint | null>;
   encryptUint256: (
@@ -66,20 +67,29 @@ function useEthersSigner(): Signer | null {
 export function HandleClientProvider({ children }: { children: ReactNode }) {
   const signer = useEthersSigner();
   const [sdk, setSdk] = useState<HandleSdk | null>(null);
+  const [sdkError, setSdkError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     if (!signer) {
       setSdk(null);
+      setSdkError(null);
       return;
     }
+    setSdkError(null);
     buildHandleClient(signer)
       .then((client) => {
-        if (!cancelled) setSdk(client);
+        if (!cancelled) {
+          setSdk(client);
+          setSdkError(null);
+        }
       })
       .catch((err) => {
         console.error("Failed to build handle SDK", err);
-        if (!cancelled) setSdk(null);
+        if (!cancelled) {
+          setSdk(null);
+          setSdkError(err?.shortMessage ?? err?.message ?? String(err));
+        }
       });
     return () => {
       cancelled = true;
@@ -89,17 +99,24 @@ export function HandleClientProvider({ children }: { children: ReactNode }) {
   const value = useMemo<HandleClientCtx>(
     () => ({
       sdk,
+      sdkError,
       signer,
       decryptUint256: async (handle: string) => {
         if (!sdk) return null;
         return decryptUint256(sdk, handle);
       },
       encryptUint256: async (value: bigint, applicationContract: `0x${string}`) => {
-        if (!sdk) throw new Error("Handle SDK not initialised — connect wallet first");
+        if (!sdk) {
+          throw new Error(
+            sdkError
+              ? `Handle SDK not initialised: ${sdkError}`
+              : "Handle SDK not initialised — connect wallet first",
+          );
+        }
         return encryptUint256(sdk, value, applicationContract);
       },
     }),
-    [sdk, signer],
+    [sdk, sdkError, signer],
   );
 
   return (

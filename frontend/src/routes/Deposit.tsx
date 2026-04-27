@@ -1,9 +1,10 @@
-import { EyeOff, Loader2, RefreshCcw } from "lucide-react";
+import { AlertTriangle, EyeOff, Loader2, RefreshCcw } from "lucide-react";
 
 import { useDepositFlow } from "@/hooks/useDepositFlow";
 import { useWallet } from "@/hooks/useWallet";
 import { useContracts } from "@/hooks/useContracts";
 import { useOpportunity } from "@/hooks/useOpportunity";
+import { useHandleClient } from "@/hooks/useHandleClient";
 
 import { Stepper } from "@/components/deposit/Stepper";
 import { StepWrap } from "@/components/deposit/StepWrap";
@@ -43,6 +44,7 @@ export default function Deposit() {
   const { isConnected } = useWallet();
   const contracts = useContracts();
   const { data: opp } = useOpportunity("1");
+  const { sdkError } = useHandleClient();
 
   const cusdcAddr = contracts.cusdc.target as string;
   const vaultAddr = contracts.vault.target as string;
@@ -65,6 +67,21 @@ export default function Deposit() {
           Your transaction details are shielded on-chain. Only authorized stewards can view the underlying assets.
         </p>
       </header>
+
+      {sdkError && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 flex items-start gap-3">
+          <AlertTriangle className="h-4 w-4 text-destructive mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-destructive">Nox handle SDK failed to initialise</div>
+            <div className="text-xs text-destructive/80 font-mono break-all mt-0.5">
+              {sdkError.length > 240 ? `${sdkError.slice(0, 240)}…` : sdkError}
+            </div>
+            <p className="text-[11px] text-destructive/70 mt-1">
+              Encrypted balance reads will return em-dashes and any deposit submit will fail with "Handle SDK not initialised". Reconnect your wallet from the top-right to retry the SDK handshake.
+            </p>
+          </div>
+        </div>
+      )}
 
       <Stepper order={flow.order} currentIndex={flow.stepIndex} />
 
