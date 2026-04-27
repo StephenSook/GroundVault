@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { AlertTriangle, ChevronRight, Download, Loader2, RefreshCcw, RefreshCw, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ChevronRight, Download, Loader2, RefreshCcw, RefreshCw, Share2, ShieldCheck } from "lucide-react";
 import { keccak256, toUtf8Bytes } from "ethers";
 
 import { useImpactMemo } from "@/hooks/useMemo";
@@ -262,6 +262,22 @@ export default function Memo() {
           >
             <Download className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Save PDF</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const propertyAddress = opp?.address ?? "an Atlanta CLT property";
+              const text = `Just reviewed the on-chain impact memo for ${propertyAddress} on @GroundVault — confidential RWA lending for Community Land Trusts. ERC-7984 + iExec Nox. Same chain, two views.`;
+              const url = window.location.href;
+              const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+              window.open(shareUrl, "_blank", "noopener,noreferrer,width=600,height=420");
+            }}
+            data-print-hidden
+            title="Share this memo on X"
+          >
+            <Share2 className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Share</span>
           </Button>
         </div>
       </nav>
