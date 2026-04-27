@@ -8,6 +8,7 @@ import { wagmiConfig } from "@/lib/wagmi";
 import { HandleClientProvider } from "@/hooks/useHandleClient";
 import { TopNav } from "@/components/nav/TopNav";
 import { Footer } from "@/components/nav/Footer";
+import { DemoBanner } from "@/components/nav/DemoBanner";
 import { useWallet } from "@/hooks/useWallet";
 import { useIdentityStatus } from "@/hooks/useIdentityStatus";
 import Verify from "@/routes/Verify";
@@ -51,6 +52,7 @@ function DepositGuard() {
 function Shell() {
   return (
     <div className="min-h-screen flex flex-col">
+      <DemoBanner />
       <TopNav />
       <main className="flex-1">
         <Routes>
