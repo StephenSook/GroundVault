@@ -160,13 +160,22 @@ function buildFallbackMemo(
       : "10-year Treasury benchmark (current rate unavailable)";
   const list = opportunity.listPriceUsd.toLocaleString();
 
+  // Anchor narrative paragraph — only included for opportunities that
+  // are part of the known Oakland City development. For any other
+  // neighborhood we drop this paragraph so the fallback memo doesn't
+  // assert facts that aren't true of that property. Keeping it in for
+  // 960 Lawton (the Apr 30 demo anchor) preserves the rich provenance
+  // detail; future opportunities will need their own anchor copy or
+  // a true LLM run.
+  const anchorNarrative = opportunity.neighborhood.toLowerCase().includes("oakland city")
+    ? "\n\nThe acquisition is part of the Trust at Oakland City mixed-income development, in which roughly half of the units are permanently affordable and half are market-rate, co-developed by Atlanta Land Trust, Cityscape Housing, and Intown Builders with Atlanta BeltLine support."
+    : "";
+
   return `> Fallback memo — ChainGPT API unavailable. Body composed locally from live HUD CHAS + FRED data; on-chain hash still anchored to GroundVaultRegistry.
 
 ## 1. Opportunity summary
 
-${opportunity.address} sits in ${opportunity.neighborhood}, an Atlanta neighborhood in Fulton County, GA. The property is offered by ${opportunity.operator} under a permanent affordability covenant restricting ownership to households earning ≤${opportunity.amiTier}% of Area Median Income. List price is $${list} USD.
-
-The acquisition is part of the Trust at Oakland City mixed-income development, in which roughly half of the units are permanently affordable and half are market-rate, co-developed by Atlanta Land Trust, Cityscape Housing, and Intown Builders with Atlanta BeltLine support.
+${opportunity.address} sits in ${opportunity.neighborhood}, an Atlanta neighborhood in Fulton County, GA. The property is offered by ${opportunity.operator} under a permanent affordability covenant restricting ownership to households earning ≤${opportunity.amiTier}% of Area Median Income. List price is $${list} USD.${anchorNarrative}
 
 ## 2. Financial benchmark
 
