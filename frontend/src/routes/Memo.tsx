@@ -267,6 +267,15 @@ export default function Memo() {
             variant="outline"
             size="sm"
             onClick={() => {
+              const host = window.location.hostname;
+              if (host === "localhost" || host === "127.0.0.1" || host.endsWith(".local")) {
+                toast({
+                  title: "Share unavailable on localhost",
+                  description:
+                    "Deploy to a Vercel preview URL first — a tweet linking to localhost won't open for anyone else.",
+                });
+                return;
+              }
               const propertyAddress = opp?.address ?? "an Atlanta CLT property";
               const text = `Just reviewed the on-chain impact memo for ${propertyAddress} on @GroundVault — confidential RWA lending for Community Land Trusts. ERC-7984 + iExec Nox. Same chain, two views.`;
               const url = window.location.href;

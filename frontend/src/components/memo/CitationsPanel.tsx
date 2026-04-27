@@ -141,7 +141,7 @@ export function CitationsPanel() {
   const grouped = groupBy(CITATIONS, (c) => c.category);
 
   return (
-    <div className="rounded-lg border border-border bg-card mt-8">
+    <div className="rounded-lg border border-border bg-card mt-8" data-print-hidden>
       <button
         type="button"
         onClick={() => setOpen((s) => !s)}

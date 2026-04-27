@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AlertTriangle, X } from "lucide-react";
 
 const DISMISSED_KEY = "groundvault-demo-banner-dismissed";
@@ -9,15 +9,17 @@ const DISMISSED_KEY = "groundvault-demo-banner-dismissed";
 // real-money product. Dismissable; the dismissal is remembered in
 // localStorage so it doesn't reappear on every page navigation.
 export function DemoBanner() {
-  const [dismissed, setDismissed] = useState(true);
-
-  useEffect(() => {
+  // Initialise from localStorage synchronously via lazy initializer so
+  // a fresh browser shows the banner on first paint with no flash, and
+  // a returning visitor who already dismissed it never sees it pop in.
+  const [dismissed, setDismissed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
     try {
-      setDismissed(window.localStorage.getItem(DISMISSED_KEY) === "1");
+      return window.localStorage.getItem(DISMISSED_KEY) === "1";
     } catch {
-      setDismissed(false);
+      return false;
     }
-  }, []);
+  });
 
   if (dismissed) return null;
 
@@ -31,7 +33,7 @@ export function DemoBanner() {
   };
 
   return (
-    <div className="bg-warning/10 border-b border-warning/30 text-warning">
+    <div className="bg-warning/10 border-b border-warning/30 text-warning" data-print-hidden>
       <div className="container flex items-center gap-3 py-1.5 text-[11px] tracking-wide">
         <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
         <span className="flex-1 truncate">

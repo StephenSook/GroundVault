@@ -22,7 +22,7 @@ const ROWS: Row[] = [
     encryptedHandle: "0x0000066eee23018f…",
   },
   {
-    label: "Investor 0x9Fba…676f15 position",
+    label: "Investor 0xAaaa…0001 position (illustrative)",
     publicValue: "$84,200.00 cUSDC",
     encryptedHandle: "0x0000066eee2301cc…",
   },
