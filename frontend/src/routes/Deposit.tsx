@@ -12,6 +12,7 @@ import { StepRequest } from "@/components/deposit/StepRequest";
 import { StepPending } from "@/components/deposit/StepPending";
 import { StepClaim } from "@/components/deposit/StepClaim";
 import { PrivacyProofDrawer } from "@/components/deposit/PrivacyProofDrawer";
+import { ActivityLog } from "@/components/deposit/ActivityLog";
 import { EncryptedValue } from "@/components/shared/EncryptedValue";
 
 const SIX_DECIMALS = 1_000_000n;
@@ -41,7 +42,7 @@ function formatGvtShares(v: bigint | null | undefined) {
 
 export default function Deposit() {
   const flow = useDepositFlow();
-  const { isConnected } = useWallet();
+  const { address, isConnected } = useWallet();
   const contracts = useContracts();
   const { data: opp } = useOpportunity("1");
   const { sdkError } = useHandleClient();
@@ -191,6 +192,8 @@ export default function Deposit() {
           </button>
         </aside>
       </div>
+
+      <ActivityLog address={address} />
 
       <PrivacyProofDrawer
         amount={flow.amount}
