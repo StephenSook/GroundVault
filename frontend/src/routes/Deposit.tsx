@@ -3,6 +3,7 @@ import { EyeOff } from "lucide-react";
 import { useDepositFlow } from "@/hooks/useDepositFlow";
 import { useWallet } from "@/hooks/useWallet";
 import { useContracts } from "@/hooks/useContracts";
+import { useOpportunity } from "@/hooks/useOpportunity";
 
 import { Stepper } from "@/components/deposit/Stepper";
 import { StepWrap } from "@/components/deposit/StepWrap";
@@ -35,6 +36,7 @@ export default function Deposit() {
   const flow = useDepositFlow();
   const { isConnected } = useWallet();
   const contracts = useContracts();
+  const { data: opp } = useOpportunity("1");
 
   const cusdcAddr = contracts.cusdc.target as string;
   const vaultAddr = contracts.vault.target as string;
@@ -77,6 +79,8 @@ export default function Deposit() {
           {flow.step === "claim" && (
             <StepClaim
               amount={flow.amount}
+              rwaId={opp?.rwaId}
+              address={opp?.address}
               onClaim={flow.claim}
               onReset={flow.reset}
             />
