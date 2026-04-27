@@ -194,8 +194,12 @@ export default function Memo() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
-        <MemoBody memo={memo} />
-        <ProvenancePanel provenance={memo.provenance} />
+        {memo ? <MemoBody memo={memo} /> : <div />}
+        {memo?.provenance ? (
+          <ProvenancePanel provenance={memo.provenance} />
+        ) : (
+          <div />
+        )}
       </div>
 
       {/* Memo bot bar — visible with MEMO_ROLE or when role check is unknown */}
