@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
-import { AlertTriangle, ArrowRight, Loader2, RefreshCcw } from "lucide-react";
+import { AlertTriangle, ArrowRight, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Opportunity } from "@/types";
 
 interface PropertyCardProps {
@@ -32,9 +33,32 @@ export function PropertyCard({ opp, error, onRetry }: PropertyCardProps) {
   if (!opp) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 rounded-lg border border-border bg-card overflow-hidden">
-        <div className="aspect-[4/3] md:aspect-auto bg-muted" />
-        <div className="p-8 flex items-center justify-center text-muted-foreground gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading on-chain opportunity record…
+        <Skeleton className="aspect-[4/3] md:aspect-auto rounded-none" />
+        <div className="p-8 flex flex-col gap-4">
+          <Skeleton className="h-5 w-40 rounded-full" />
+          <Skeleton className="h-9 w-3/4" />
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-border pt-4">
+            <div className="space-y-1.5">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+            <div className="space-y-1.5">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+            <div className="space-y-1.5">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-4 w-28" />
+            </div>
+            <div className="space-y-1.5">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3 pt-2">
+            <Skeleton className="h-9 w-40" />
+            <Skeleton className="h-9 w-44" />
+          </div>
         </div>
       </div>
     );

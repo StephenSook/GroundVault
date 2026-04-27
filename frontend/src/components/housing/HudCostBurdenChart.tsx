@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -11,6 +10,7 @@ import {
 } from "recharts";
 
 import { fetchCostBurden, type CostBurdenBreakdown } from "@/lib/api/hud";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Datum {
   label: string;
@@ -109,8 +109,14 @@ export function HudCostBurdenChart() {
 
   if (!data) {
     return (
-      <div className="rounded-lg border border-border bg-card p-6 flex items-center gap-2 text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" /> Loading HUD CHAS data…
+      <div className="rounded-lg border border-border bg-card p-6 space-y-3">
+        <Skeleton className="h-6 w-56" />
+        <Skeleton className="h-3 w-72" />
+        <div className="space-y-3 pt-3">
+          <Skeleton className="h-5 w-full" />
+          <Skeleton className="h-5 w-3/4" />
+          <Skeleton className="h-5 w-1/2" />
+        </div>
       </div>
     );
   }
