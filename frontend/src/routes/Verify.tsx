@@ -183,15 +183,12 @@ function VerifyHeroIllustration() {
       viewBox="0 0 800 600"
       className="w-full h-full"
       role="img"
-      aria-label="Three Atlanta Craftsman homes with a steward on the front porch — illustration of a Community Land Trust block"
+      aria-label="Illustration of three Atlanta Craftsman homes with a steward on the front porch — a Community Land Trust block."
     >
       {/* Background grid texture, very subtle */}
       <defs>
         <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
           <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1f3a2a" strokeWidth="0.5" opacity="0.06" />
-        </pattern>
-        <pattern id="dotgrid" width="22" height="22" patternUnits="userSpaceOnUse">
-          <circle cx="2" cy="2" r="1" fill="#1f3a2a" opacity="0.09" />
         </pattern>
       </defs>
       <rect width="800" height="600" fill="url(#grid)" />
@@ -270,7 +267,7 @@ function VerifyHeroIllustration() {
       {/* Small picket fence between houses (suggests neighborhood) */}
       <g stroke="#1f3a2a" strokeWidth="1.5" opacity="0.5" fill="none">
         <line x1="305" y1="495" x2="305" y2="510" />
-        <line x1="307" y1="500" x2="500" y2="500" />
+        <line x1="305" y1="500" x2="500" y2="500" />
         <line x1="500" y1="495" x2="500" y2="510" />
         <line x1="320" y1="495" x2="320" y2="510" />
         <line x1="335" y1="495" x2="335" y2="510" />
@@ -299,9 +296,6 @@ function VerifyHeroIllustration() {
         fill="none"
         opacity="0.4"
       />
-
-      {/* Subtle dotted ground texture */}
-      <rect x="0" y="555" width="800" height="45" fill="url(#dotgrid)" opacity="0.6" />
 
       {/* Anchor caption: small Atlanta CLT cue */}
       <g fontFamily="ui-monospace, Menlo, monospace" fill="#1f3a2a">
