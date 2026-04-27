@@ -19,10 +19,12 @@ import { Button } from "@/components/ui/button";
 
 const MEMO_ROLE_HASH = keccak256(toUtf8Bytes("MEMO_ROLE"));
 
-function useIsMemoBot() {
+type MemoRoleState = "yes" | "no" | "unknown";
+
+function useIsMemoBot(): MemoRoleState {
   const { address, isConnected } = useWallet();
   const { housingRegistry } = useContracts();
-  const [hasRole, setHasRole] = useState(false);
+  const [hasRole, setHasRole] = useState<MemoRoleState>("no");
 
   useEffect(() => {
     let cancelled = false;
@@ -33,19 +35,25 @@ function useIsMemoBot() {
       new URLSearchParams(window.location.search).get("role") === "memo";
 
     if (queryOverride) {
-      setHasRole(true);
+      setHasRole("yes");
       return;
     }
     if (!address || !isConnected) {
-      setHasRole(false);
+      setHasRole("no");
       return;
     }
     (async () => {
       try {
         const result = await housingRegistry.hasRole(MEMO_ROLE_HASH, address);
-        if (!cancelled) setHasRole(Boolean(result));
-      } catch {
-        if (!cancelled) setHasRole(false);
+        if (!cancelled) setHasRole(Boolean(result) ? "yes" : "no");
+      } catch (err) {
+        // Distinguish "wallet definitely does not have the role" from
+        // "we could not check". Hiding the bar entirely on a read
+        // error meant a real MEMO_ROLE holder hitting an RPC blip
+        // could not regenerate at all. Surface the unknown state so
+        // the bar still renders with a warning.
+        console.error("useIsMemoBot read failed:", err);
+        if (!cancelled) setHasRole("unknown");
       }
     })();
     return () => {
@@ -61,7 +69,8 @@ export default function Memo() {
   const { data: memo, error: memoError, retry: retryMemo } = useImpactMemo(id);
   const { data: opp } = useOpportunity(id);
   const { housingRegistry } = useContracts();
-  const isBot = useIsMemoBot();
+  const memoRole = useIsMemoBot();
+  const showRegenerateBar = memoRole === "yes" || memoRole === "unknown";
   const [busy, setBusy] = useState(false);
 
   const numericId = id ? Number(id) : 1;
@@ -174,14 +183,22 @@ export default function Memo() {
         <ProvenancePanel provenance={memo.provenance} />
       </div>
 
-      {/* Memo bot bar — only visible with MEMO_ROLE */}
-      {isBot && (
+      {/* Memo bot bar — visible with MEMO_ROLE or when role check is unknown */}
+      {showRegenerateBar && (
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-secondary/80 backdrop-blur-md">
           <div className="container flex items-center justify-between py-3 text-sm">
-            <span className="inline-flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-sage" />
-              MEMO_ROLE active. You have permissions to update this document.
-            </span>
+            {memoRole === "yes" ? (
+              <span className="inline-flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-sage" />
+                MEMO_ROLE active. You have permissions to update this document.
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-2 text-warning">
+                <AlertTriangle className="h-4 w-4" />
+                MEMO_ROLE check failed (RPC error). The regenerate tx will
+                still revert if your wallet does not actually hold the role.
+              </span>
+            )}
             <Button onClick={regenerate} disabled={busy} className="bg-forest hover:bg-forest/90">
               {busy ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
