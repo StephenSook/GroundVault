@@ -25,24 +25,34 @@ export function Stepper({ order, currentIndex }: StepperProps) {
             {i > 0 && (
               <span
                 className={cn(
-                  "absolute top-4 right-1/2 h-px w-full",
+                  "absolute top-4 right-1/2 h-px w-full transition-colors duration-500",
                   done ? "bg-forest" : "bg-border",
                 )}
               />
             )}
             <span
               className={cn(
-                "relative z-10 flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium",
-                done && "bg-forest text-primary-foreground",
-                current && "bg-background border-2 border-forest text-forest",
-                !done && !current && "bg-background border border-border text-muted-foreground",
+                "relative z-10 flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium transition-all duration-300 ease-out",
+                done && "bg-forest text-primary-foreground scale-100",
+                current && "bg-background border-2 border-forest text-forest scale-110 shadow-lg shadow-forest/20",
+                !done && !current && "bg-background border border-border text-muted-foreground scale-100",
               )}
             >
-              {done ? <Check className="h-4 w-4" /> : i + 1}
+              {done ? (
+                <Check className="h-4 w-4 animate-in zoom-in-50 duration-300" />
+              ) : (
+                <span className="animate-in fade-in duration-200">{i + 1}</span>
+              )}
+              {current && (
+                <span
+                  aria-hidden
+                  className="absolute inset-0 rounded-full border-2 border-forest/40 animate-ping"
+                />
+              )}
             </span>
             <span
               className={cn(
-                "text-xs",
+                "text-xs transition-colors duration-300",
                 (done || current) ? "text-foreground font-medium" : "text-muted-foreground",
               )}
             >
