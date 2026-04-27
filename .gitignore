@@ -24,6 +24,9 @@ frontend/node_modules
 frontend/dist
 frontend/.vite
 frontend/coverage
+# vite writes a hashed timestamp loader next to vite.config.ts on each
+# (re)start; harmless tmpfile, never useful in git history
+frontend/vite.config.ts.timestamp-*.mjs
 # bun lockfile — we use npm, lockfile is package-lock.json
 frontend/bun.lockb
 
