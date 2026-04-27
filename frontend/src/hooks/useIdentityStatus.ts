@@ -74,10 +74,14 @@ export function useIdentityStatus(wallet?: string) {
             : null,
         );
         setInvestorCountry(Number(country) === 840 ? "US" : country.toString());
-      } catch (err) {
+      } catch (err: any) {
         if (!cancelled) {
           console.error("useIdentityStatus error:", err);
-          setStatus("unverified");
+          // Distinguish "actually unverified on chain" from "we couldn't
+          // read the chain". Setting unverified on a transient RPC error
+          // booted real verified users into /verify with no warning, so
+          // the gate now shows an "unknown" status with a retry path.
+          setStatus("unknown");
           setIdentity(null);
         }
       } finally {

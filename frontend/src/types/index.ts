@@ -1,4 +1,4 @@
-export type IdentityStatus = "unverified" | "pending" | "verified";
+export type IdentityStatus = "unverified" | "pending" | "verified" | "unknown";
 
 export interface IdentityRecord {
   contract: string;

@@ -22,7 +22,14 @@ const queryClient = new QueryClient();
 function HomeRedirect() {
   const { address } = useWallet();
   const { status } = useIdentityStatus(address);
-  return <Navigate to={status === "verified" ? "/housing" : "/verify"} replace />;
+  // If the chain read came back "unknown" (RPC failure, ABI drift) we
+  // route to /housing rather than /verify — booting a verified user
+  // into the verify flow on a transient read error gives them no way
+  // to recover, while /housing is browsable for everyone.
+  if (status === "verified" || status === "unknown") {
+    return <Navigate to="/housing" replace />;
+  }
+  return <Navigate to="/verify" replace />;
 }
 
 function DepositGuard() {

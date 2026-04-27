@@ -11,7 +11,7 @@ interface DepositGateProps {
   onConnect: () => void;
 }
 
-const COPY: Record<"unconnected" | "pending" | "unverified", { title: string; body: string }> = {
+const COPY: Record<"unconnected" | "pending" | "unverified" | "unknown", { title: string; body: string }> = {
   unconnected: {
     title: "Connect a verified wallet to deposit",
     body: "GroundVault is gated by ERC-3643 KYC. Connect a wallet that holds an Identity contract with the required claim attestations to enter the deposit flow.",
@@ -24,10 +24,20 @@ const COPY: Record<"unconnected" | "pending" | "unverified", { title: string; bo
     title: "Wallet not yet whitelisted",
     body: "The connected wallet is not registered in the IdentityRegistry. Visit the Verify screen to mint an Identity and request claim attestations from a trusted issuer.",
   },
+  unknown: {
+    title: "Could not verify identity status",
+    body: "The IdentityRegistry read failed — likely a transient Arbitrum Sepolia RPC error. Your wallet may already be verified. Refresh the page to retry, or continue to the Verify screen to manually re-check.",
+  },
 };
 
 export function DepositGate({ isConnected, address, status, onConnect }: DepositGateProps) {
-  const branch = !isConnected ? "unconnected" : status === "pending" ? "pending" : "unverified";
+  const branch: keyof typeof COPY = !isConnected
+    ? "unconnected"
+    : status === "pending"
+      ? "pending"
+      : status === "unknown"
+        ? "unknown"
+        : "unverified";
   const copy = COPY[branch];
 
   return (
