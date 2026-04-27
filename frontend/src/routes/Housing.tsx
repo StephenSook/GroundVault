@@ -25,7 +25,15 @@ export default function Housing() {
       </div>
 
       <section>
-        <h2 className="font-display text-2xl text-forest mb-4">Upcoming Opportunities</h2>
+        <div className="flex items-baseline justify-between mb-4">
+          <h2 className="font-display text-2xl text-forest">Pipeline (illustrative)</h2>
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+            post-hackathon roadmap
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground mb-4 max-w-2xl">
+          These addresses are not on chain today. They illustrate the post-hackathon roadmap — additional Atlanta CLT acquisitions GroundVault is positioned to fund once the live opportunity above is closed.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {upcoming.map((u) => (
             <div
@@ -37,7 +45,7 @@ export default function Housing() {
                 <div className="text-xs text-muted-foreground">{u.state}</div>
               </div>
               <span className="text-[10px] uppercase tracking-widest rounded-full bg-secondary px-2.5 py-1 text-muted-foreground">
-                Coming soon
+                Roadmap
               </span>
             </div>
           ))}
