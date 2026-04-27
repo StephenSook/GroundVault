@@ -102,7 +102,7 @@ export default async function handler(req: Request): Promise<Response> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "web3_llm",
+      model: "general_assistant",
       question: buildPrompt(body.opportunity, body.context),
       chatHistory: "off",
     }),

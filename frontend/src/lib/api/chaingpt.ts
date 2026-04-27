@@ -101,7 +101,7 @@ async function callDirect(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "web3_llm",
+      model: "general_assistant",
       question: buildPrompt(opportunity, context),
       chatHistory: "off",
     }),
