@@ -20,7 +20,24 @@ interface Datum {
   description: string;
 }
 
+function readCssVar(name: string, fallback: string): string {
+  if (typeof document === "undefined") return fallback;
+  const value = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  return value ? `hsl(${value})` : fallback;
+}
+
 function buildData(d: CostBurdenBreakdown): Datum[] {
+  // Resolve the CSS custom properties at runtime instead of writing
+  // `hsl(var(--sage))` directly into the Recharts Cell `fill`. Recharts
+  // renders inside an SVG that does not always inherit `:root` custom
+  // properties consistently across browsers — Safari and Firefox
+  // sometimes fail to resolve `var()` inside SVG attribute values and
+  // render the bar as black. Reading the value here gives a literal
+  // hsl(...) string the SVG fill attribute always understands.
+  const sage = readCssVar("--sage", "hsl(120 13% 55%)");
+  const forest = readCssVar("--forest", "hsl(150 35% 18%)");
   return [
     {
       label: "Severely Cost Burdened",
@@ -33,14 +50,14 @@ function buildData(d: CostBurdenBreakdown): Datum[] {
       label: "Cost Burdened",
       short: "Moderate (30–50%)",
       pct: d.costBurdenedPct,
-      color: "hsl(var(--sage))",
+      color: sage,
       description: "30–50% of income on housing. At-risk cohort.",
     },
     {
       label: "Not Cost Burdened",
       short: "Stable (<30%)",
       pct: d.notBurdenedPct,
-      color: "hsl(var(--forest))",
+      color: forest,
       description: "Less than 30% of income on housing.",
     },
   ];
@@ -64,8 +81,26 @@ export function HudCostBurdenChart() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const result = await fetchCostBurden("13121"); // Fulton County GA
-      if (!cancelled) setData(result);
+      // fetchCostBurden is defensive (always returns a CostBurdenBreakdown
+      // even on token-missing / HTTP error / shape-change), so a throw
+      // here would only mean a future edit broke that contract. The
+      // try/catch + fallback assignment makes that future regression
+      // visible (chart renders) instead of leaving the user staring at
+      // the loading spinner forever.
+      try {
+        const result = await fetchCostBurden("13121"); // Fulton County GA
+        if (!cancelled) setData(result);
+      } catch (err) {
+        console.error("HudCostBurdenChart: fetch threw unexpectedly:", err);
+        if (!cancelled) {
+          setData({
+            severelyBurdenedPct: 26,
+            costBurdenedPct: 24,
+            notBurdenedPct: 50,
+            source: "fallback",
+          });
+        }
+      }
     })();
     return () => {
       cancelled = true;
@@ -87,7 +122,7 @@ export function HudCostBurdenChart() {
       <div className="flex items-center justify-between">
         <h3 className="font-display text-xl text-forest">Fulton County Cost Burden</h3>
         <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-          {data.source === "live" ? "live · HUD CHAS" : "cached snapshot"}
+          {data.source === "live" ? "live · HUD CHAS" : "static fallback (HUD API unavailable)"}
         </span>
       </div>
       <p className="text-xs text-muted-foreground mt-1 mb-5">
