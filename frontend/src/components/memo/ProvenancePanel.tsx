@@ -1,15 +1,23 @@
-import { AlertTriangle, Clock, ExternalLink, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Clock, ExternalLink, HelpCircle, ShieldCheck } from "lucide-react";
 import type { MemoProvenance } from "@/types";
 import { Button } from "@/components/ui/button";
 import { useContracts } from "@/hooks/useContracts";
 
 const ZERO_HASH = "0x" + "0".repeat(64);
+const HASH_SHAPE = /^0x[0-9a-f]{64}$/;
 
-type IntegrityState = "pending" | "verified" | "tamper";
+type IntegrityState = "pending" | "verified" | "tamper" | "unknown";
 
 function computeState(provenance: MemoProvenance): IntegrityState {
   const hash = provenance.onChainHash?.toLowerCase() ?? "";
-  const isAnchored = hash.length > 0 && hash !== ZERO_HASH;
+  // Reject anything that does not look like a real keccak256 result —
+  // upstream type drift or a malformed contract response would otherwise
+  // pass the simple non-zero check below and render as a "tamper alert"
+  // when the right state is "we cannot reason about integrity".
+  if (!HASH_SHAPE.test(hash)) {
+    return hash.length === 0 ? "pending" : "unknown";
+  }
+  const isAnchored = hash !== ZERO_HASH;
   if (!isAnchored) return "pending";
   return provenance.verified ? "verified" : "tamper";
 }
@@ -41,6 +49,15 @@ const BADGE = {
     iconClass: "text-destructive",
     titleClass: "text-destructive",
     bodyClass: "text-destructive/80",
+  },
+  unknown: {
+    icon: HelpCircle,
+    title: "Unknown integrity state",
+    body: "The on-chain hash field came back in an unexpected shape (not a 0x-prefixed 64-hex keccak256). The integrity check cannot run until the chain read succeeds with a well-formed hash. Reload the page or retry the chain read.",
+    container: "bg-muted border-border",
+    iconClass: "text-muted-foreground",
+    titleClass: "text-foreground",
+    bodyClass: "text-muted-foreground",
   },
 };
 
