@@ -4,6 +4,7 @@ import { PropertyMap } from "@/components/housing/PropertyMap";
 import { VaultFundingStrip } from "@/components/housing/VaultFundingStrip";
 import { HudCostBurdenChart } from "@/components/housing/HudCostBurdenChart";
 import { AtlantaContextPanel } from "@/components/housing/AtlantaContextPanel";
+import { PrivacyComparison } from "@/components/housing/PrivacyComparison";
 
 export default function Housing() {
   const { data: opp, error, retry } = useOpportunity("1");
@@ -23,6 +24,8 @@ export default function Housing() {
         <HudCostBurdenChart />
         <AtlantaContextPanel />
       </div>
+
+      <PrivacyComparison />
 
       <section>
         <div className="flex items-baseline justify-between mb-4">
