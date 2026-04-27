@@ -32,6 +32,7 @@ export function useDepositFlow() {
 
   const [step, setStep] = useState<DepositStep>("wrap");
   const [busy, setBusy] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [amount, setAmount] = useState<number>(50);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,66 +60,71 @@ export function useDepositFlow() {
 
   const refresh = useCallback(async () => {
     if (!address || !sdk) return;
+    setRefreshing(true);
 
-    // Read all four encrypted balances independently so that one failed
-    // chain call or one ACL-rejected handle does not poison the others.
-    // The previous Promise.all was an all-or-nothing barrier — any single
-    // reject left the entire balance state stale, the catch logged to
-    // console only, and the stepper sat on whatever step it was on with
-    // no signal to the user that the read had failed.
-    const handles = await Promise.allSettled([
-      contracts.cusdc.confidentialBalanceOf(address) as Promise<string>,
-      contracts.vault.pendingDepositOf(address) as Promise<string>,
-      contracts.vault.claimableDepositOf(address) as Promise<string>,
-      contracts.shareToken.confidentialBalanceOf(address) as Promise<string>,
-    ]);
+    try {
+      // Read all four encrypted balances independently so that one failed
+      // chain call or one ACL-rejected handle does not poison the others.
+      // The previous Promise.all was an all-or-nothing barrier — any single
+      // reject left the entire balance state stale, the catch logged to
+      // console only, and the stepper sat on whatever step it was on with
+      // no signal to the user that the read had failed.
+      const handles = await Promise.allSettled([
+        contracts.cusdc.confidentialBalanceOf(address) as Promise<string>,
+        contracts.vault.pendingDepositOf(address) as Promise<string>,
+        contracts.vault.claimableDepositOf(address) as Promise<string>,
+        contracts.shareToken.confidentialBalanceOf(address) as Promise<string>,
+      ]);
 
-    const decryptIfOk = async (h: PromiseSettledResult<string>) => {
-      if (h.status === "rejected") return { ok: false as const, err: errMsg(h.reason) };
-      try {
-        const v = await decryptUint256(h.value);
-        return { ok: true as const, value: v };
-      } catch (e) {
-        return { ok: false as const, err: errMsg(e) };
+      const decryptIfOk = async (h: PromiseSettledResult<string>) => {
+        if (h.status === "rejected") return { ok: false as const, err: errMsg(h.reason) };
+        try {
+          const v = await decryptUint256(h.value);
+          return { ok: true as const, value: v };
+        } catch (e) {
+          return { ok: false as const, err: errMsg(e) };
+        }
+      };
+
+      const [cusdcRes, pendingRes, claimableRes, sharesRes] = await Promise.all(
+        handles.map(decryptIfOk),
+      );
+
+      const errs: typeof readErrors = {};
+      if (!cusdcRes.ok) errs.cusdc = cusdcRes.err;
+      if (!pendingRes.ok) errs.pending = pendingRes.err;
+      if (!claimableRes.ok) errs.claimable = claimableRes.err;
+      if (!sharesRes.ok) errs.shares = sharesRes.err;
+      setReadErrors(errs);
+
+      if (cusdcRes.ok) setCusdcBalance(cusdcRes.value);
+      if (pendingRes.ok) setPendingDeposit(pendingRes.value);
+      if (claimableRes.ok) setClaimableDeposit(claimableRes.value);
+      if (sharesRes.ok) setShareBalance(sharesRes.value);
+
+      // Only auto-advance the stepper when every read succeeded. Advancing
+      // on partial state would push users to a screen that does not match
+      // their actual chain position (e.g. landing on "claim" because the
+      // claimable handle returned 0 while the pending read silently
+      // rejected and is therefore unknown).
+      const allOk = cusdcRes.ok && pendingRes.ok && claimableRes.ok && sharesRes.ok;
+      if (!allOk) return;
+
+      const cusdc = cusdcRes.ok ? cusdcRes.value : null;
+      const pending = pendingRes.ok ? pendingRes.value : null;
+      const claimable = claimableRes.ok ? claimableRes.value : null;
+
+      if ((claimable ?? 0n) > 0n) {
+        setStep("claim");
+      } else if ((pending ?? 0n) > 0n) {
+        setStep("pending");
+      } else if ((cusdc ?? 0n) > 0n) {
+        setStep("request");
+      } else {
+        setStep("wrap");
       }
-    };
-
-    const [cusdcRes, pendingRes, claimableRes, sharesRes] = await Promise.all(
-      handles.map(decryptIfOk),
-    );
-
-    const errs: typeof readErrors = {};
-    if (!cusdcRes.ok) errs.cusdc = cusdcRes.err;
-    if (!pendingRes.ok) errs.pending = pendingRes.err;
-    if (!claimableRes.ok) errs.claimable = claimableRes.err;
-    if (!sharesRes.ok) errs.shares = sharesRes.err;
-    setReadErrors(errs);
-
-    if (cusdcRes.ok) setCusdcBalance(cusdcRes.value);
-    if (pendingRes.ok) setPendingDeposit(pendingRes.value);
-    if (claimableRes.ok) setClaimableDeposit(claimableRes.value);
-    if (sharesRes.ok) setShareBalance(sharesRes.value);
-
-    // Only auto-advance the stepper when every read succeeded. Advancing
-    // on partial state would push users to a screen that does not match
-    // their actual chain position (e.g. landing on "claim" because the
-    // claimable handle returned 0 while the pending read silently
-    // rejected and is therefore unknown).
-    const allOk = cusdcRes.ok && pendingRes.ok && claimableRes.ok && sharesRes.ok;
-    if (!allOk) return;
-
-    const cusdc = cusdcRes.ok ? cusdcRes.value : null;
-    const pending = pendingRes.ok ? pendingRes.value : null;
-    const claimable = claimableRes.ok ? claimableRes.value : null;
-
-    if ((claimable ?? 0n) > 0n) {
-      setStep("claim");
-    } else if ((pending ?? 0n) > 0n) {
-      setStep("pending");
-    } else if ((cusdc ?? 0n) > 0n) {
-      setStep("request");
-    } else {
-      setStep("wrap");
+    } finally {
+      setRefreshing(false);
     }
   }, [address, sdk, contracts, decryptUint256]);
 
@@ -255,6 +261,7 @@ export function useDepositFlow() {
     claimableDeposit,
     shareBalance,
     readErrors,
+    refreshing,
     lastTxHash,
     lastBlockNumber,
     wrap,

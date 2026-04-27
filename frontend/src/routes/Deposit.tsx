@@ -1,4 +1,4 @@
-import { EyeOff } from "lucide-react";
+import { EyeOff, Loader2, RefreshCcw } from "lucide-react";
 
 import { useDepositFlow } from "@/hooks/useDepositFlow";
 import { useWallet } from "@/hooks/useWallet";
@@ -137,9 +137,18 @@ export default function Deposit() {
           </div>
           <button
             onClick={flow.refresh}
-            className="mt-5 text-xs text-muted-foreground hover:text-forest"
+            disabled={flow.refreshing}
+            className="mt-5 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-forest disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Refresh ↻
+            {flow.refreshing ? (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin" /> Refreshing…
+              </>
+            ) : (
+              <>
+                <RefreshCcw className="h-3 w-3" /> Refresh
+              </>
+            )}
           </button>
         </aside>
       </div>
