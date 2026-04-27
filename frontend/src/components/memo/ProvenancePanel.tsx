@@ -9,6 +9,7 @@ import {
 import type { MemoProvenance } from "@/types";
 import { Button } from "@/components/ui/button";
 import { useContracts } from "@/hooks/useContracts";
+import { Jargon } from "@/components/shared/Jargon";
 
 const ZERO_HASH = "0x" + "0".repeat(64);
 const HASH_SHAPE = /^0x[0-9a-f]{64}$/;
@@ -103,7 +104,16 @@ export function ProvenancePanel({ provenance }: { provenance: MemoProvenance }) 
 
       <Field label="Generator" value={provenance.generator} indicator />
       <Field label="Timestamp (UTC)" value={provenance.timestampUtc} mono />
-      <Field label="On-chain hash (keccak256)" value={provenance.onChainHash} mono chip />
+      <Field
+        label={
+          <>
+            On-chain hash (<Jargon term="keccak256">keccak256</Jargon>)
+          </>
+        }
+        value={provenance.onChainHash}
+        mono
+        chip
+      />
       <Field label="Storage URI" value={provenance.storageUri || "—"} mono />
       <Field label="Registry contract" value={registryAddr} mono chip />
 
@@ -132,7 +142,7 @@ function Field({
   chip,
   indicator,
 }: {
-  label: string;
+  label: React.ReactNode;
   value: string;
   mono?: boolean;
   link?: boolean;

@@ -3,6 +3,7 @@ import { Wallet, Layers } from "lucide-react";
 
 import { useWallet, shortAddress } from "@/hooks/useWallet";
 import { useContracts } from "@/hooks/useContracts";
+import { Jargon } from "@/components/shared/Jargon";
 
 function shortHandle(handle?: string) {
   if (!handle) return "—";
@@ -62,7 +63,8 @@ export function VaultFundingStrip() {
             {shortHandle(supplyHandle) || "—"}
           </div>
           <div className="text-[10px] opacity-60 mt-1">
-            Public chain view: handle is bytes32 — only ACL holders can decrypt the underlying value.
+            Public chain view: <Jargon term="handle">handle</Jargon> is bytes32 — only{" "}
+            <Jargon term="ACL">ACL</Jargon> holders can decrypt the underlying value.
           </div>
         </div>
       </div>

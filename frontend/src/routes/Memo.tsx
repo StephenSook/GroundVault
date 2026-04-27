@@ -16,6 +16,7 @@ import { bumpedGasOverrides } from "@/lib/gasOverrides";
 import { MemoBody } from "@/components/memo/MemoBody";
 import { ProvenancePanel } from "@/components/memo/ProvenancePanel";
 import { Button } from "@/components/ui/button";
+import { Jargon } from "@/components/shared/Jargon";
 
 const MEMO_ROLE_HASH = keccak256(toUtf8Bytes("MEMO_ROLE"));
 
@@ -167,7 +168,8 @@ export default function Memo() {
         </ol>
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs">
-            <ShieldCheck className="h-3 w-3 text-sage" /> ChainGPT
+            <ShieldCheck className="h-3 w-3 text-sage" />{" "}
+            <Jargon term="ChainGPT">ChainGPT</Jargon>
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-mono">
             Arbitrum Sepolia
@@ -209,7 +211,7 @@ export default function Memo() {
             {memoRole === "yes" ? (
               <span className="inline-flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4 text-sage" />
-                MEMO_ROLE active. You have permissions to update this document.
+                <Jargon term="MEMO_ROLE">MEMO_ROLE</Jargon> active. You have permissions to update this document.
               </span>
             ) : (
               <span className="inline-flex items-center gap-2 text-warning">
