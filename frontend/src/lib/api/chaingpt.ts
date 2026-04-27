@@ -52,18 +52,47 @@ Important constraints:
 - Risk section MUST disclose hackathon scope: this is a testnet prototype, not a production-grade investment vehicle.`;
 }
 
-export async function generateMemo(
+async function callServerProxy(
   opportunity: Parameters<typeof buildPrompt>[0],
   context: Parameters<typeof buildPrompt>[1],
-): Promise<{ markdown: string; hash: `0x${string}` }> {
-  const apiKey = import.meta.env.VITE_CHAINGPT_API_KEY as string | undefined;
-  if (!apiKey) throw new Error("VITE_CHAINGPT_API_KEY not set");
+): Promise<string | null> {
+  // Try the Vercel Edge proxy at /api/chaingpt first. The proxy keeps
+  // the API key server-side so it never enters the bundle. Returns null
+  // (rather than throwing) when the proxy is unreachable / not deployed
+  // so the caller can fall through to the dev direct path.
+  let res: Response;
+  try {
+    res = await fetch("/api/chaingpt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ opportunity, context }),
+    });
+  } catch {
+    return null;
+  }
+  const ct = res.headers.get("content-type") ?? "";
+  if (!ct.includes("application/json")) return null; // SPA fallback hit
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    throw new Error(
+      `ChainGPT proxy HTTP ${res.status}: ${detail?.error ?? "unknown error"}`,
+    );
+  }
+  const data = await res.json().catch(() => null);
+  if (typeof data?.markdown !== "string") return null;
+  return data.markdown;
+}
 
-  const body = {
-    model: "web3_llm",
-    question: buildPrompt(opportunity, context),
-    chatHistory: "off",
-  };
+async function callDirect(
+  opportunity: Parameters<typeof buildPrompt>[0],
+  context: Parameters<typeof buildPrompt>[1],
+): Promise<string> {
+  const apiKey = import.meta.env.VITE_CHAINGPT_API_KEY as string | undefined;
+  if (!apiKey) {
+    throw new Error(
+      "ChainGPT not available: /api/chaingpt proxy returned no JSON and VITE_CHAINGPT_API_KEY is not set. Set CHAINGPT_API_KEY on the deployment, or VITE_CHAINGPT_API_KEY locally for dev.",
+    );
+  }
 
   const res = await fetch(ENDPOINT, {
     method: "POST",
@@ -71,7 +100,11 @@ export async function generateMemo(
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      model: "web3_llm",
+      question: buildPrompt(opportunity, context),
+      chatHistory: "off",
+    }),
   });
 
   if (!res.ok) {
@@ -80,12 +113,21 @@ export async function generateMemo(
   }
 
   const raw = await res.text();
-  const markdown = raw
+  return raw
     .split("\n")
     .map((line) => (line.startsWith("data:") ? line.slice(5).trimStart() : line))
     .join("\n")
     .trim();
+}
 
+export async function generateMemo(
+  opportunity: Parameters<typeof buildPrompt>[0],
+  context: Parameters<typeof buildPrompt>[1],
+): Promise<{ markdown: string; hash: `0x${string}` }> {
+  // Server proxy first (production path). Direct fallback for `vite dev`
+  // where /api/chaingpt is not served.
+  const proxied = await callServerProxy(opportunity, context);
+  const markdown = proxied ?? (await callDirect(opportunity, context));
   return { markdown, hash: keccak256(toUtf8Bytes(markdown)) as `0x${string}` };
 }
 
