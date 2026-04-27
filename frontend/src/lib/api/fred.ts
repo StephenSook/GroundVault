@@ -17,17 +17,39 @@ export interface FredSeriesPoint {
 const DIRECT_BASE = "https://api.stlouisfed.org/fred/series/observations";
 
 async function callServerProxy(seriesId: string): Promise<FredSeriesPoint[] | null> {
+  // Returns null when the proxy is unreachable / not deployed so the
+  // caller can fall through to the direct path. Differs from the
+  // chaingpt client because FRED is a soft dependency — a missing
+  // treasury rate degrades the memo prompt to "current rate
+  // unavailable" but does not break the regenerate flow, so silent
+  // graceful degradation is the right default. Each silent path logs
+  // a console.warn so the underlying reason is visible in devtools.
   let res: Response;
   try {
     res = await fetch(`/api/fred?seriesId=${encodeURIComponent(seriesId)}&limit=30`);
-  } catch {
+  } catch (err) {
+    console.warn("FRED proxy fetch failed — falling back:", err);
     return null;
   }
   const ct = res.headers.get("content-type") ?? "";
-  if (!ct.includes("application/json")) return null; // SPA 404 fallback
-  if (!res.ok) return null;
+  if (!ct.includes("application/json")) {
+    if (!res.ok) {
+      console.warn(`FRED proxy returned non-JSON HTTP ${res.status} (deploy routing?)`);
+    }
+    return null;
+  }
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({}));
+    console.warn(
+      `FRED proxy HTTP ${res.status}: ${detail?.error ?? "unknown"}; detail: ${detail?.detail ?? ""}`,
+    );
+    return null;
+  }
   const data = await res.json().catch(() => null);
-  if (!data || !Array.isArray(data.observations)) return null;
+  if (!data || !Array.isArray(data.observations)) {
+    console.warn("FRED proxy returned 200 but no observations array");
+    return null;
+  }
   return data.observations as FredSeriesPoint[];
 }
 

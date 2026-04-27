@@ -58,8 +58,10 @@ async function callServerProxy(
 ): Promise<string | null> {
   // Try the Vercel Edge proxy at /api/chaingpt first. The proxy keeps
   // the API key server-side so it never enters the bundle. Returns null
-  // (rather than throwing) when the proxy is unreachable / not deployed
-  // so the caller can fall through to the dev direct path.
+  // ONLY for the legitimate "proxy not deployed" case (which is what
+  // `vite dev` returns — the SPA route catch-all serves index.html with
+  // a non-JSON content type). For every other error path we throw so
+  // shouldFallback / outer error handling can route correctly.
   let res: Response;
   try {
     res = await fetch("/api/chaingpt", {
@@ -67,11 +69,24 @@ async function callServerProxy(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ opportunity, context }),
     });
-  } catch {
-    return null;
+  } catch (err) {
+    // Network-layer rejection (server unreachable, DNS failure). Bubble
+    // up so shouldFallback can route to the local fallback memo.
+    throw err;
   }
   const ct = res.headers.get("content-type") ?? "";
-  if (!ct.includes("application/json")) return null; // SPA fallback hit
+  // Non-JSON 200 happens locally with `vite dev` (SPA fallback) — we
+  // intentionally fall through to the direct path in that case.
+  // A non-JSON non-200 is a real misconfiguration that we want to
+  // surface, not silently degrade.
+  if (!ct.includes("application/json")) {
+    if (!res.ok) {
+      throw new Error(
+        `ChainGPT proxy returned non-JSON HTTP ${res.status} — likely deploy routing misconfiguration`,
+      );
+    }
+    return null;
+  }
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
     throw new Error(
@@ -79,7 +94,9 @@ async function callServerProxy(
     );
   }
   const data = await res.json().catch(() => null);
-  if (typeof data?.markdown !== "string") return null;
+  if (typeof data?.markdown !== "string") {
+    throw new Error("ChainGPT proxy returned 200 but no markdown field — proxy bug");
+  }
   return data.markdown;
 }
 
