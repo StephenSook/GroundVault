@@ -1,20 +1,61 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { fetchCostBurden, type CostBurdenBreakdown } from "@/lib/api/hud";
 
-interface Bar {
+interface Datum {
   label: string;
+  short: string;
   pct: number;
   color: string;
+  description: string;
 }
 
-function buildBars(d: CostBurdenBreakdown): Bar[] {
+function buildData(d: CostBurdenBreakdown): Datum[] {
   return [
-    { label: "Severely Cost Burdened (>50% income)", pct: d.severelyBurdenedPct, color: "hsl(0 55% 40%)" },
-    { label: "Cost Burdened (30-50% income)", pct: d.costBurdenedPct, color: "hsl(var(--sage))" },
-    { label: "Not Cost Burdened", pct: d.notBurdenedPct, color: "hsl(var(--forest))" },
+    {
+      label: "Severely Cost Burdened",
+      short: "Severe (>50%)",
+      pct: d.severelyBurdenedPct,
+      color: "hsl(0 55% 40%)",
+      description: ">50% of income on housing. The cohort GroundVault directly serves.",
+    },
+    {
+      label: "Cost Burdened",
+      short: "Moderate (30–50%)",
+      pct: d.costBurdenedPct,
+      color: "hsl(var(--sage))",
+      description: "30–50% of income on housing. At-risk cohort.",
+    },
+    {
+      label: "Not Cost Burdened",
+      short: "Stable (<30%)",
+      pct: d.notBurdenedPct,
+      color: "hsl(var(--forest))",
+      description: "Less than 30% of income on housing.",
+    },
   ];
+}
+
+function ChartTooltip({ active, payload }: { active?: boolean; payload?: any[] }) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0].payload as Datum;
+  return (
+    <div className="rounded-md border border-border bg-card px-3 py-2 shadow-md max-w-xs">
+      <div className="text-xs font-semibold text-forest">{d.label}</div>
+      <div className="text-[10px] text-muted-foreground mt-1">{d.description}</div>
+      <div className="font-mono text-sm mt-2">{d.pct}% of Fulton County renters</div>
+    </div>
+  );
 }
 
 export function HudCostBurdenChart() {
@@ -39,7 +80,7 @@ export function HudCostBurdenChart() {
     );
   }
 
-  const bars = buildBars(data);
+  const rows = buildData(data);
 
   return (
     <div className="rounded-lg border border-border bg-card p-6">
@@ -50,23 +91,35 @@ export function HudCostBurdenChart() {
         </span>
       </div>
       <p className="text-xs text-muted-foreground mt-1 mb-5">
-        HUD CHAS data context for households earning ≤80% AMI.
+        HUD CHAS renter household tiers. Hover a row for source detail.
       </p>
-      <div className="space-y-4">
-        {bars.map((b) => (
-          <div key={b.label}>
-            <div className="flex justify-between text-xs mb-1.5">
-              <span>{b.label}</span>
-              <span className="font-medium">{b.pct}%</span>
-            </div>
-            <div className="h-2 w-full rounded-full bg-secondary overflow-hidden">
-              <div
-                className="h-full rounded-full"
-                style={{ width: `${b.pct}%`, backgroundColor: b.color }}
-              />
-            </div>
-          </div>
-        ))}
+      <div className="h-44 -ml-2">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={rows} layout="vertical" barSize={18} margin={{ left: 10, right: 24 }}>
+            <XAxis
+              type="number"
+              domain={[0, 100]}
+              tickFormatter={(v) => `${v}%`}
+              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              type="category"
+              dataKey="short"
+              tick={{ fontSize: 11, fill: "hsl(var(--foreground))" }}
+              axisLine={false}
+              tickLine={false}
+              width={120}
+            />
+            <Tooltip cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }} content={<ChartTooltip />} />
+            <Bar dataKey="pct" radius={[4, 4, 4, 4]}>
+              {rows.map((row) => (
+                <Cell key={row.label} fill={row.color} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
