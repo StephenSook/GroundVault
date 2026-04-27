@@ -6,7 +6,13 @@ const ARBISCAN_BASE = "https://sepolia.arbiscan.io/address/";
 
 export function Footer() {
   const { housingRegistry } = useContracts();
-  const registryAddr = housingRegistry.target as string;
+  // ethers v6 Contract.target can be `string | Addressable`. Cast to a
+  // safe string and guard against the unresolved-Addressable case so
+  // the .slice(0, 8) below cannot throw if a future code path returns
+  // a contract whose target has not been resolved yet.
+  const rawTarget = housingRegistry.target;
+  const registryAddr = typeof rawTarget === "string" ? rawTarget : "";
+  const hasValidRegistry = registryAddr.startsWith("0x") && registryAddr.length === 42;
 
   return (
     <footer className="relative mt-24 border-t border-border bg-secondary/30 overflow-hidden">
@@ -44,14 +50,18 @@ export function Footer() {
             </li>
             <li>
               <span className="text-muted-foreground">Registry:</span>{" "}
-              <a
-                href={`${ARBISCAN_BASE}${registryAddr}`}
-                target="_blank"
-                rel="noreferrer"
-                className="underline-offset-2 hover:text-forest hover:underline"
-              >
-                {registryAddr.slice(0, 8)}…{registryAddr.slice(-6)}
-              </a>
+              {hasValidRegistry ? (
+                <a
+                  href={`${ARBISCAN_BASE}${registryAddr}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline-offset-2 hover:text-forest hover:underline"
+                >
+                  {registryAddr.slice(0, 8)}…{registryAddr.slice(-6)}
+                </a>
+              ) : (
+                <span className="text-muted-foreground/60">resolving…</span>
+              )}
             </li>
             <li>
               <span className="text-muted-foreground">Standards:</span> ERC-7984 · ERC-3643 · ERC-7540 (adapted)

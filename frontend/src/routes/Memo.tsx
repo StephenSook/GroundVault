@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AlertTriangle, ChevronRight, Loader2, RefreshCcw, RefreshCw, ShieldCheck } from "lucide-react";
 import { keccak256, toUtf8Bytes } from "ethers";
@@ -81,13 +81,38 @@ export default function Memo() {
     | "confirming"
     | "done";
   const [regenStep, setRegenStep] = useState<RegenerateStep>("idle");
+  const doneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clean up the "done" hold timer if the user navigates away mid-hold.
+  // Prevents setRegenStep firing on an unmounted component.
+  useEffect(() => {
+    return () => {
+      if (doneTimerRef.current) {
+        clearTimeout(doneTimerRef.current);
+        doneTimerRef.current = null;
+      }
+    };
+  }, []);
   const [busy, setBusy] = useState(false);
 
   const numericId = id ? Number(id) : 1;
   const breadcrumbAddress = opp?.address ?? "Loading…";
 
   async function regenerate() {
-    if (!opp) return;
+    if (busy) return;
+    if (!opp) {
+      toast({
+        title: "Memo regenerate skipped",
+        description: "Opportunity record not loaded yet — wait for the housing read to complete.",
+      });
+      return;
+    }
+    // Cancel any pending "done" hold timer from a prior run so a rapid
+    // successive click doesn't see a stale state during this run.
+    if (doneTimerRef.current) {
+      clearTimeout(doneTimerRef.current);
+      doneTimerRef.current = null;
+    }
     setBusy(true);
     setRegenStep("fetching");
     let success = false;
@@ -165,13 +190,31 @@ export default function Memo() {
       });
     } catch (err: any) {
       console.error(err);
-      toast({ title: "Memo regenerate failed", description: err?.shortMessage ?? err?.message });
+      // Categorise the error so the toast message is more useful than a
+      // generic "regenerate failed". ethers v6 surfaces specific codes
+      // for user-rejected and contract reverts; the rest fall through
+      // to the underlying shortMessage / message.
+      let title = "Memo regenerate failed";
+      const code = err?.code;
+      if (code === "ACTION_REJECTED") title = "Wallet rejected the regenerate tx";
+      else if (code === "CALL_EXCEPTION") title = "Contract reverted regenerate";
+      else if (code === "INSUFFICIENT_FUNDS") title = "Out of gas for regenerate";
+      else if (err?.name === "AbortError") title = "Regenerate aborted";
+      toast({
+        title,
+        description: err?.shortMessage ?? err?.message ?? String(err).slice(0, 200),
+      });
     } finally {
       setBusy(false);
       // Hold the "done" state visible briefly on the happy path so the
-      // user sees the green check before the panel resets to idle.
+      // user sees the green check before the panel resets to idle. The
+      // timer id is stored in a ref so a component unmount or a rapid
+      // second regenerate click clears it before it fires.
       if (success) {
-        setTimeout(() => setRegenStep("idle"), 2000);
+        doneTimerRef.current = setTimeout(() => {
+          setRegenStep("idle");
+          doneTimerRef.current = null;
+        }, 2000);
       } else {
         setRegenStep("idle");
       }
