@@ -55,9 +55,13 @@ export default function Deposit() {
   // could fetch the actual handle bytes from the contract reads as well
   // (cusdc.confidentialBalanceOf returns bytes32), but for the privacy
   // proof + per-row UX it's enough to show the contract address tied to
-  // the handle plus the decrypted value the user sees.
+  // the handle plus the decrypted value the user sees. Pending and
+  // Claimable both live on the vault contract but in different
+  // mappings, so we differentiate them with a per-row suffix.
+  const vaultPrefix = `${vaultAddr.slice(0, 10)}…${vaultAddr.slice(-4)}`;
   const cusdcHandleLabel = `${cusdcAddr.slice(0, 10)}…${cusdcAddr.slice(-4)} (encrypted)`;
-  const vaultHandleLabel = `${vaultAddr.slice(0, 10)}…${vaultAddr.slice(-4)} (encrypted)`;
+  const pendingHandleLabel = `${vaultPrefix} (encrypted · pending)`;
+  const claimableHandleLabel = `${vaultPrefix} (encrypted · claimable)`;
   const shareHandleLabel = `${shareAddr.slice(0, 10)}…${shareAddr.slice(-4)} (encrypted)`;
 
   return (
@@ -149,14 +153,14 @@ export default function Deposit() {
             />
             <PrivateRow
               label="Pending deposit"
-              handle={vaultHandleLabel}
+              handle={pendingHandleLabel}
               decrypted={formatUnits6(flow.pendingDeposit, "cUSDC")}
               authorized={isConnected}
               error={flow.readErrors.pending}
             />
             <PrivateRow
               label="Claimable shares"
-              handle={vaultHandleLabel}
+              handle={claimableHandleLabel}
               decrypted={formatUnits6(flow.claimableDeposit, "cUSDC")}
               authorized={isConnected}
               error={flow.readErrors.claimable}
