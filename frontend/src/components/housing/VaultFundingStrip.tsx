@@ -59,7 +59,11 @@ export function VaultFundingStrip() {
           <div className="text-[10px] uppercase tracking-widest opacity-70">
             Vault aggregate supply (encrypted)
           </div>
-          <div className="font-mono text-sm mt-0.5 break-all">
+          <div className="font-mono text-sm mt-0.5 break-all inline-flex items-center gap-2">
+            <span className="relative inline-flex h-1.5 w-1.5" aria-hidden>
+              <span className="absolute inline-flex h-full w-full rounded-full bg-sage opacity-70 animate-ping" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-sage" />
+            </span>
             {shortHandle(supplyHandle) || "—"}
           </div>
           <div className="text-[10px] opacity-60 mt-1">

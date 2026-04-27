@@ -31,6 +31,10 @@ export function EncryptedValue({
   if (variant === "inline") {
     return (
       <span className={cn("inline-flex items-center gap-2", className)}>
+        <span className="relative inline-flex h-1.5 w-1.5" aria-hidden>
+          <span className="absolute inline-flex h-full w-full rounded-full bg-sage opacity-60 animate-ping" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-sage" />
+        </span>
         <span className="font-mono text-xs text-muted-foreground">{handle.slice(0, 10)}…</span>
         {canDecrypt && show && <span className="font-medium">{decrypted}</span>}
       </span>
@@ -44,7 +48,13 @@ export function EncryptedValue({
         {canDecrypt && show ? (
           <span className="font-display text-lg text-foreground">{decrypted}</span>
         ) : (
-          <span className="font-mono text-xs text-muted-foreground truncate">{handle}</span>
+          <span className="inline-flex items-center gap-2">
+            <span className="relative inline-flex h-1.5 w-1.5" aria-hidden>
+              <span className="absolute inline-flex h-full w-full rounded-full bg-sage opacity-60 animate-ping" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-sage" />
+            </span>
+            <span className="font-mono text-xs text-muted-foreground truncate">{handle}</span>
+          </span>
         )}
         {canDecrypt && (
           <button
