@@ -72,6 +72,14 @@ export default function Memo() {
   const { housingRegistry } = useContracts();
   const memoRole = useIsMemoBot();
   const showRegenerateBar = memoRole === "yes" || memoRole === "unknown";
+  type RegenerateStep =
+    | "idle"
+    | "fetching"
+    | "generating"
+    | "anchoring"
+    | "confirming"
+    | "done";
+  const [regenStep, setRegenStep] = useState<RegenerateStep>("idle");
   const [busy, setBusy] = useState(false);
 
   const numericId = id ? Number(id) : 1;
@@ -80,6 +88,8 @@ export default function Memo() {
   async function regenerate() {
     if (!opp) return;
     setBusy(true);
+    setRegenStep("fetching");
+    let success = false;
     try {
       const [costBurden, treasury] = await Promise.all([
         fetchCostBurden("13121"),
@@ -103,6 +113,7 @@ export default function Memo() {
         });
       }
 
+      setRegenStep("generating");
       const result = await generateMemo(
         {
           address: opp.address,
@@ -134,9 +145,13 @@ export default function Memo() {
           console.warn("Could not stash fallback memo body in localStorage:", e);
         }
       }
+      setRegenStep("anchoring");
       const overrides = await bumpedGasOverrides();
       const tx = await housingRegistry.setMemo(numericId, result.hash, memoUri, overrides);
+      setRegenStep("confirming");
       await tx.wait();
+      setRegenStep("done");
+      success = true;
       const sourceLabel =
         result.source === "fallback"
           ? "fallback memo (ChainGPT unavailable)"
@@ -152,6 +167,13 @@ export default function Memo() {
       toast({ title: "Memo regenerate failed", description: err?.shortMessage ?? err?.message });
     } finally {
       setBusy(false);
+      // Hold the "done" state visible briefly on the happy path so the
+      // user sees the green check before the panel resets to idle.
+      if (success) {
+        setTimeout(() => setRegenStep("idle"), 2000);
+      } else {
+        setRegenStep("idle");
+      }
     }
   }
 
@@ -176,6 +198,10 @@ export default function Memo() {
           </span>
         </div>
       </nav>
+
+      {regenStep !== "idle" && (
+        <RegenerateProgress step={regenStep} />
+      )}
 
       {memoError && (
         <div className="rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 flex items-start gap-3">
@@ -231,6 +257,53 @@ export default function Memo() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+const REGEN_STEPS: { key: string; label: string }[] = [
+  { key: "fetching", label: "Fetching HUD CHAS + FRED" },
+  { key: "generating", label: "Calling ChainGPT" },
+  { key: "anchoring", label: "Submitting setMemo tx" },
+  { key: "confirming", label: "Awaiting block confirmation" },
+  { key: "done", label: "On-chain hash anchored" },
+];
+
+function RegenerateProgress({ step }: { step: string }) {
+  const currentIdx = REGEN_STEPS.findIndex((s) => s.key === step);
+  return (
+    <div className="rounded-md border border-forest/40 bg-forest/5 px-4 py-3">
+      <div className="text-xs font-semibold text-forest mb-2">
+        {step === "done" ? "Memo regenerate complete" : "Regenerating impact memo"}
+      </div>
+      <ol className="space-y-1.5">
+        {REGEN_STEPS.map((s, i) => {
+          const isDone = i < currentIdx || step === "done";
+          const isActive = i === currentIdx && step !== "done";
+          return (
+            <li key={s.key} className="flex items-center gap-2 text-xs">
+              {isDone ? (
+                <ShieldCheck className="h-3.5 w-3.5 text-sage flex-shrink-0" />
+              ) : isActive ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-forest flex-shrink-0" />
+              ) : (
+                <span className="h-3.5 w-3.5 rounded-full border border-muted-foreground/40 flex-shrink-0" />
+              )}
+              <span
+                className={
+                  isDone
+                    ? "text-foreground"
+                    : isActive
+                      ? "text-forest font-medium"
+                      : "text-muted-foreground"
+                }
+              >
+                {s.label}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
     </div>
   );
 }
