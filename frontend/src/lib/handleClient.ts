@@ -20,6 +20,66 @@ export interface DecryptedValue {
   solidityType: string;
 }
 
+// Errors that ARE worth retrying — the Nox testnet's secret-store API
+// occasionally rejects requests with "Network request failed" / 5xx /
+// timeout while the underlying ACL + handle are perfectly fine. A
+// 200ms-backoff retry generally clears these on the second try.
+const TRANSIENT_PATTERNS: readonly RegExp[] = [
+  /network request failed/i,
+  /timeout/i,
+  /timed out/i,
+  /econn(refused|reset|aborted)/i,
+  /socket hang up/i,
+  /fetch failed/i,
+  /\b(502|503|504)\b/,
+];
+
+// Errors that are NOT worth retrying — these reflect a real ACL /
+// handle / auth problem and another attempt would just burn time
+// before failing identically.
+const PERMANENT_PATTERNS: readonly RegExp[] = [
+  /unauthorized/i,
+  /forbidden/i,
+  /\bacl\b/i,
+  /permission denied/i,
+  /malformed/i,
+  /invalid handle/i,
+  /\b401\b/,
+  /\b403\b/,
+  /\b404\b/,
+];
+
+function isTransient(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err ?? "");
+  if (PERMANENT_PATTERNS.some((p) => p.test(msg))) return false;
+  if (TRANSIENT_PATTERNS.some((p) => p.test(msg))) return true;
+  // Default: treat unclassified errors as transient — preferring an
+  // extra retry over a misclassified permanent failure that the user
+  // would experience as a one-shot "read failed" with no recovery.
+  return true;
+}
+
+async function withRetry<T>(
+  op: () => Promise<T>,
+  attempts = 3,
+  baseDelayMs = 200,
+): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      return await op();
+    } catch (err) {
+      lastErr = err;
+      if (!isTransient(err) || i === attempts - 1) throw err;
+      // 200ms, 600ms, 1800ms — caps total added latency at ~2.6s for
+      // the worst-case "all 3 attempts fail" path.
+      const delay = baseDelayMs * Math.pow(3, i);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  throw lastErr;
+}
+
 export async function decryptUint256(
   client: HandleSdk,
   handle: string,
@@ -29,13 +89,10 @@ export async function decryptUint256(
   // 0 without going to the TEE. This short-circuit is safe and
   // expected — the UI renders "0.00 cUSDC" rather than "—".
   if (!handle || handle === "0x" || /^0x0+$/.test(handle)) return 0n;
-  // Real handles go through the Nox TEE. Errors from this path are
-  // not silent-zero — they indicate the wallet's ACL was rejected,
-  // the TEE timed out, or the handle is malformed. Surface as a
-  // throw so the caller's per-handle try/catch can render the
-  // failure inline instead of treating "decrypt failed" as "value
-  // is zero".
-  const result = await client.decrypt(handle as `0x${string}`);
+  // Real handles go through the Nox TEE with retry-on-transient. A
+  // failure that survives all retries indicates a genuine ACL / TEE
+  // problem; the caller's per-handle try/catch surfaces it inline.
+  const result = await withRetry(() => client.decrypt(handle as `0x${string}`));
   return result.value as bigint;
 }
 
@@ -44,6 +101,12 @@ export async function encryptUint256(
   value: bigint,
   applicationContract: `0x${string}`,
 ): Promise<{ handle: `0x${string}`; handleProof: `0x${string}` }> {
-  const result = await client.encryptInput(value, "uint256", applicationContract);
+  // Same retry policy applies here — encryptInput hits the same Nox
+  // testnet that flakes on decrypt, and a transient failure during a
+  // wrap or recordDeposit would force the user to restart the whole
+  // multi-tx flow.
+  const result = await withRetry(() =>
+    client.encryptInput(value, "uint256", applicationContract),
+  );
   return { handle: result.handle as `0x${string}`, handleProof: result.handleProof };
 }
