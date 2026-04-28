@@ -1,18 +1,16 @@
 #!/usr/bin/env node
-// Build-time copy of <repo>/audits/*.md into frontend/src/data/audits/.
+// Sync <repo>/audits/*.md → frontend/src/data/audits/*.md.
 //
 // The audit reports live at the repo root for README/GitHub
-// discoverability. The /audits route's auditsManifest.ts uses
-// import.meta.glob to inline them at build time — but Vite's bundler
-// only reliably resolves paths inside the Vite project root. When
-// Vercel builds with frontend/ as the project root, the original
-// glob path of "../../../audits/*.md" resolves to nothing and the
-// page renders 0/11 contracts audited.
+// discoverability, but the /audits route's auditsManifest.ts uses
+// import.meta.glob to inline them at build time and the glob must
+// resolve inside the Vite project root (frontend/) for Vercel's
+// build container to find them. Run this script whenever the
+// upstream audits change to refresh the in-source mirror, then
+// commit the updated frontend/src/data/audits/ files.
 //
-// This script syncs the markdown into frontend/src/data/audits/ so
-// the glob path "@/data/audits/*.md" stays inside the project root.
-// The destination is gitignored — it's a build artifact, not a
-// source-of-truth.
+// Run manually: npm run sync-audits
+// (The mirror is checked in — NOT regenerated automatically by build.)
 
 import { mkdirSync, copyFileSync, readdirSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
