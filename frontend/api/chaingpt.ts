@@ -11,11 +11,14 @@
 // `vite dev` does not run this route; the client lib falls back to a
 // direct call via VITE_CHAINGPT_API_KEY for the dev path.
 
-// Node.js Serverless runtime instead of Edge — Vercel edge IPs are
-// being rejected by ChainGPT's Cloudflare gate ("Attention Required!"
-// HTML 403 before auth even runs). Node.js Serverless runs from a
-// different IP pool that's less aggressively flagged.
-export const config = { runtime: "nodejs" };
+// Edge runtime. Tried switching to nodejs to dodge ChainGPT's Cloudflare
+// gate, but that broke the handler signature (Edge uses Web API
+// Request/Response; nodejs runtime expects (req, res)) and caused
+// FUNCTION_INVOCATION_FAILED. Reverted — the proxy remains best-effort
+// (will 502 when Cloudflare blocks Vercel edge IPs). The client lib
+// has a two-tier fallback (proxy → direct browser → local memo) so a
+// proxy failure doesn't block the regenerate path.
+export const config = { runtime: "edge" };
 
 const CHAINGPT_ENDPOINT = "https://api.chaingpt.org/chat/stream";
 
