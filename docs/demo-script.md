@@ -16,13 +16,15 @@ Target length: **4 minutes**. Beats locked, copy editable. Two-screen recording:
 
 ## 0:30 — 1:00 · Gap (30s)
 
-> "Right now there's $35.9 billion of real-world assets tokenized on-chain. Zero of it is permanent affordability housing. The reason is that public chains expose every balance to the people Maria is bidding against."
+> "Here's where we are. Less than 0.13% of global assets are on-chain. Of the $35.9 billion of tokenized real-world assets that did cross over, zero is in permanent-affordability housing. The blocker is the same in both cases — public chains expose every balance to the people Maria is bidding against."
 
 **Visual:** click into `/housing` → scroll to **"Why confidentiality? Same chain, two predator surfaces."** panel → expand it.
 
 Pause on the side-by-side. Left column shows what an Ethereum mainnet vault would expose ($4.25M total, $84,200 per investor, $50k pending acquisition). Right column shows the same state on GroundVault as bytes32 encrypted handles.
 
 **Read the closing line out loud:** "Same numbers, two different surfaces. What a public chain reader cannot decrypt, a predator bot cannot front-run."
+
+**Source notes (for your own awareness — don't read these):** the 0.13% figure is iExec's own EthCC framing of total onchain capital ($430B onchain ÷ $360T global = 0.12%, rounded up to ≤0.13% for cleaner delivery). The $35.9B comes from RWA.xyz's November 2025 dashboard. Citing both means a judge who's read the iExec article hears alignment, and a judge who hasn't gets a third-party-cited stat too.
 
 ---
 
