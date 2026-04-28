@@ -2,6 +2,7 @@ import { NavLink, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useWallet, shortAddress } from "@/hooks/useWallet";
 import { Wallet } from "lucide-react";
+import { Wordmark } from "@/components/nav/Logo";
 
 const NAV = [
   { to: "/verify", label: "Verify" },
@@ -17,8 +18,8 @@ export function TopNav() {
   return (
     <header className="border-b border-border bg-secondary/40 backdrop-blur-sm sticky top-0 z-40">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="font-display text-xl text-forest">
-          GroundVault
+        <Link to="/" className="text-forest hover:opacity-80 transition-opacity" aria-label="GroundVault home">
+          <Wordmark />
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">
