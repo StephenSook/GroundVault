@@ -53,10 +53,13 @@ function isTransient(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err ?? "");
   if (PERMANENT_PATTERNS.some((p) => p.test(msg))) return false;
   if (TRANSIENT_PATTERNS.some((p) => p.test(msg))) return true;
-  // Default: treat unclassified errors as transient — preferring an
-  // extra retry over a misclassified permanent failure that the user
-  // would experience as a one-shot "read failed" with no recovery.
-  return true;
+  // Default: fail fast on unclassified errors. The previous default
+  // was retry-on-unknown, but that burned hundreds of ms per failed
+  // call when the SDK introduced a new error shape we hadn't matched
+  // yet. The known-transient list covers the actual Nox testnet
+  // flakiness (network/timeout/5xx). Anything else surfaces in the UI
+  // immediately so the user can see what's wrong.
+  return false;
 }
 
 async function withRetry<T>(
@@ -71,8 +74,11 @@ async function withRetry<T>(
     } catch (err) {
       lastErr = err;
       if (!isTransient(err) || i === attempts - 1) throw err;
-      // 200ms, 600ms, 1800ms — caps total added latency at ~2.6s for
-      // the worst-case "all 3 attempts fail" path.
+      // Sleeps between attempts: 200ms (after attempt 0) and 600ms
+      // (after attempt 1). The third attempt (i === 2) hits the
+      // attempts-1 guard above and throws without sleeping. So total
+      // added latency on a worst-case all-three-fail path is
+      // 200 + 600 = 800ms.
       const delay = baseDelayMs * Math.pow(3, i);
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
