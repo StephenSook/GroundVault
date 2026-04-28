@@ -64,7 +64,7 @@ export function PropertyCard({ opp, error, onRetry }: PropertyCardProps) {
     );
   }
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-0 rounded-lg border border-border bg-card overflow-hidden">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-0 rounded-lg border border-border bg-card overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className="aspect-[4/3] md:aspect-auto bg-muted overflow-hidden">
         <img
           src={opp.heroImage}

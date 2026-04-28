@@ -41,7 +41,7 @@ export default function Housing() {
           {upcoming.map((u) => (
             <div
               key={u.name}
-              className="flex items-center justify-between rounded-lg border border-border bg-card p-5"
+              className="flex items-center justify-between rounded-lg border border-border bg-card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
             >
               <div>
                 <div className="font-medium">{u.name}</div>

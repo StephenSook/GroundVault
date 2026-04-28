@@ -104,7 +104,7 @@ function AuditCard({ audit }: { audit: AuditSummary }) {
   const total = SEVERITY_ORDER.reduce((s, k) => s + audit.counts[k], 0);
 
   return (
-    <article className="rounded-lg border border-border bg-card overflow-hidden">
+    <article className="rounded-lg border border-border bg-card overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className="px-5 py-4 space-y-3">
         <div className="flex items-baseline justify-between gap-2">
           <h3 className="font-display text-lg text-forest">{audit.name}</h3>
