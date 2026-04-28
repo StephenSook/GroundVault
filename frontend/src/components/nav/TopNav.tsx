@@ -8,6 +8,7 @@ const NAV = [
   { to: "/deposit", label: "Deposit" },
   { to: "/housing", label: "Housing" },
   { to: "/housing/1/memo", label: "Memo", match: "/housing/" },
+  { to: "/audits", label: "Audits" },
 ];
 
 export function TopNav() {

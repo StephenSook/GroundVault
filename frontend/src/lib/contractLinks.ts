@@ -35,7 +35,12 @@ export function githubSourceUrl(name: ContractName): string {
   return `${GITHUB_REPO}/blob/${GITHUB_BRANCH}/${SOURCE_PATHS[name]}`;
 }
 
-export function githubAuditUrl(name: ContractName): string {
+// Audit reports include some names that are NOT deployed contracts —
+// notably `Identity.md`, the per-user OnchainID stub which is built
+// ad-hoc in the verify flow rather than appearing in DEPLOYMENT. So
+// this accepts a freeform stem rather than the strict ContractName
+// union, while the source-link helper above stays narrow.
+export function githubAuditUrl(name: string): string {
   return `${GITHUB_REPO}/blob/${GITHUB_BRANCH}/audits/${name}.md`;
 }
 

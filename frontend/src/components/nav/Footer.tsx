@@ -94,6 +94,12 @@ export function Footer() {
             GitHub repo <ExternalLink className="h-3 w-3" />
           </a>
           <a
+            href="/audits"
+            className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-forest transition-colors"
+          >
+            Audit reports
+          </a>
+          <a
             href="https://atlantalandtrust.org"
             target="_blank"
             rel="noreferrer"

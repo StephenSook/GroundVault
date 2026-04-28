@@ -11,6 +11,14 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
+    // Allow Vite dev server to read the sibling `audits/` directory at
+    // the repo root. The /audits route uses `import.meta.glob` against
+    // those .md files; without this the dev server returns 403 for
+    // anything outside the project root. Production build inlines the
+    // strings at compile time, so this only affects `vite dev`.
+    fs: {
+      allow: [".."],
+    },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
