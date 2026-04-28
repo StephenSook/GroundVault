@@ -49,11 +49,26 @@ const STEM_TO_CONTRACT: Record<string, ContractName | null> = {
   GroundVaultRegistry: "GroundVaultRegistry",
 };
 
-const SEVERITY_HEADER = /^####\s+\*\*(Critical|High|Medium|Low|Informational)\*\*/gim;
-// Matches a hyphen-prefixed bullet whose content starts with bold text — these
-// are the per-finding lines inside a severity section. Sub-bullets like
-// "  - **Recommendation**: …" are excluded by the leading single `-`.
-const FINDING_BULLET = /^-\s+\*\*[^*]+?\*\*/gm;
+// Permissive severity-header regex covering the three heading styles
+// the ChainGPT auditor emits across the 10 reports:
+//   `### Critical`                       (h3, no bold)
+//   `#### Critical`                      (h4, no bold)
+//   `#### **Critical**`                  (h4, bold)
+//   `#### **Critical Issues**`           (suffix word)
+//   `#### **High Severity Issues**`      (suffix phrase)
+//   `#### 1. **Critical Issues**`        (numbered prefix + suffix)
+// The capture group is the severity word; optional pieces consume the
+// numeric prefix, asterisks, and trailing "Severity Issues" / "Issues" /
+// "Findings" wrappers without polluting the capture.
+const SEVERITY_HEADER =
+  /^#{2,4}\s+(?:\d+\.\s+)?\*{0,2}(Critical|High|Medium|Low|Informational)(?:\s+(?:Severity\s+)?(?:Issues?|Findings?))?\*{0,2}\s*$/gim;
+
+// Bullet whose title is bold text. Accepts dash, asterisk, OR numeric
+// prefix because Identity.md uses `1. **Title**` while every other file
+// uses `- **Title**`. The negative lookahead skips "None" /
+// "None Identified" placeholders that the auditor uses to denote "no
+// findings in this severity" — those would otherwise count as 1.
+const FINDING_BULLET = /^(?:[-*]|\d+\.)\s+\*\*(?!None\b|N\/A\b)[^*]+?\*\*/gm;
 
 function parseSeverityCounts(body: string): Record<Severity, number> {
   const sectionRanges: { sev: Severity; start: number; end: number }[] = [];

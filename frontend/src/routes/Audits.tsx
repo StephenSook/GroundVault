@@ -68,12 +68,13 @@ export default function Audits() {
           })}
         </div>
         <p className="text-[11px] text-muted-foreground mt-4 leading-relaxed max-w-3xl">
-          ChainGPT returned three Critical findings across the audited set. One
-          is genuine accepted hackathon scope (recordDeposit transfer
-          verification — Phase 2.6 trust hardening, documented in
-          GroundVaultCore NatSpec). Two are false positives where an existing
-          mitigation was not surfaced clearly to the auditor. Read the README
-          rollup for the full per-finding response.
+          Critical findings flagged by ChainGPT include the recordDeposit
+          transfer-verification gap on GroundVaultCore (accepted hackathon
+          scope — the Phase 2.6 trust-hardening path is documented in the
+          contract NatSpec). The remainder are addressed in the per-contract
+          report or marked as false positives where an existing mitigation
+          was not surfaced clearly to the auditor. See the README rollup
+          for the full per-finding response.
         </p>
       </section>
 
