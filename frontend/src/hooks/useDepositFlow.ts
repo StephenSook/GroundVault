@@ -58,7 +58,7 @@ export function useDepositFlow() {
   const [lastTxHash, setLastTxHash] = useState<string | null>(null);
   const [lastBlockNumber, setLastBlockNumber] = useState<number | null>(null);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (opts: { skipAutoAdvance?: boolean } = {}) => {
     if (!address) return;
 
     // SDK build failed — populate per-row errors instead of silently
@@ -126,6 +126,16 @@ export function useDepositFlow() {
       // rejected and is therefore unknown).
       if (!cusdcRes.ok || !pendingRes.ok || !claimableRes.ok || !sharesRes.ok) return;
 
+      // Skip the auto-advance ladder when the caller is an action handler
+      // (wrap/submitDeposit/claim) — those handlers explicitly setStep
+      // after the refresh, and letting auto-advance run first creates a
+      // visual flash where the stepper jumps to a stale state (e.g. a
+      // leftover claimable balance from a prior unfinished run pulling
+      // the user to "claim" right after they clicked Wrap). Initial mount
+      // and the manual Refresh button still call refresh() with no
+      // options, so the ladder fires there.
+      if (opts.skipAutoAdvance) return;
+
       if (claimableRes.value > 0n) {
         setStep("claim");
       } else if (pendingRes.value > 0n) {
@@ -190,7 +200,7 @@ export function useDepositFlow() {
       await wrapTx.wait();
 
       toast({ title: "Wrapped", description: `${amount} mUSDC → encrypted cUSDC` });
-      await refresh();
+      await refresh({ skipAutoAdvance: true });
       setStep("request");
     } catch (err: any) {
       console.error(err);
@@ -235,7 +245,7 @@ export function useDepositFlow() {
       await recordTx.wait();
 
       toast({ title: "Deposit submitted", description: "Pending operator processing" });
-      await refresh();
+      await refresh({ skipAutoAdvance: true });
       setStep("pending");
 
       // Hackathon demo: deployer wallet holds OPERATOR_ROLE, advance
@@ -244,7 +254,7 @@ export function useDepositFlow() {
         const processTx = await contracts.vault.processDeposit(address, overrides);
         await processTx.wait();
         toast({ title: "Processed", description: "Operator advanced your deposit to claimable" });
-        await refresh();
+        await refresh({ skipAutoAdvance: true });
         setStep("claim");
       } catch (err: any) {
         // Distinguish "this wallet is not the operator" from any other
@@ -289,7 +299,11 @@ export function useDepositFlow() {
       const tx = await contracts.vault.claimDeposit(overrides);
       await tx.wait();
       toast({ title: "Shares claimed", description: "Encrypted vault shares minted" });
-      await refresh();
+      // Skip auto-advance — step stays on "claim" (it was already
+      // "claim" before this handler ran); the stepIndex compute
+      // detects the post-claim sticky state from shareBalance > 0
+      // with every other balance at 0 and lights up all four ticks.
+      await refresh({ skipAutoAdvance: true });
     } catch (err: any) {
       console.error(err);
       setError(err?.shortMessage ?? err?.message ?? String(err));
