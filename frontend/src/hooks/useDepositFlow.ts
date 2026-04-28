@@ -304,7 +304,24 @@ export function useDepositFlow() {
     setError(null);
   }, []);
 
-  const stepIndex = ORDER.indexOf(step);
+  // After a successful claim, every balance returns to zero except
+  // shareBalance (which carries the just-minted GVT). The auto-advance
+  // ladder keeps `step` sticky on "claim" so the impact summary stays
+  // visible — but the Stepper renders index === currentIndex as
+  // "current ●" not "done ✓". To get the fourth tick to fill in we
+  // bump stepIndex one past the last visible step in this terminal
+  // post-claim state, which makes Stepper's `i < currentIndex` true
+  // for every step. Detection: shareBalance > 0 AND every active-flow
+  // balance is zero — distinguishes "just claimed" from "claim is the
+  // active step because there's a claimable handle on chain."
+  const isPostClaimComplete =
+    step === "claim" &&
+    shareBalance !== null &&
+    shareBalance > 0n &&
+    cusdcBalance === 0n &&
+    pendingDeposit === 0n &&
+    claimableDeposit === 0n;
+  const stepIndex = isPostClaimComplete ? ORDER.length : ORDER.indexOf(step);
 
   return {
     step,
