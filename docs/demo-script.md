@@ -113,17 +113,34 @@ If the demo runs short, hold on the housing dashboard for the last 10 seconds wi
 
 ## Shot list — pre-recording checklist
 
+### 🚨 Step 0 — Wallet pre-clean (do this FIRST, before anything else)
+
+The auto-advance ladder on `/deposit` reads on-chain state and routes you to whatever step has a non-zero balance. Leftover state from prior testing (claimable handles, pending deposits, residual shares) will skip the recording past steps you want to demo. **Run this sequence once, in order, before opening QuickTime:**
+
+1. [ ] Open `https://groundvault-app.vercel.app/deposit` in a fresh browser tab. Connect MetaMask with the deployer wallet (`0x9Fba…676f15`).
+2. [ ] **Look at the stepper at the top.** Note which step is highlighted as current (the pulsing circle):
+     - If **Step 4 / Claim** is current → you have leftover claimable state. Click **Claim GVT shares**, confirm in MetaMask, wait for the impact summary card to appear. Then click **Reset**.
+     - If **Step 3 / Pending** is current → wait ~5 seconds for the operator auto-advance to fire (you should see a MetaMask popup for processDeposit; confirm it). Then claim + reset as above.
+     - If **Step 2 / Request** is current → leftover wrapped cUSDC. You can either submit + claim + reset to clear it, OR proceed (Step 5 below will overwrite anyway).
+     - If **Step 1 / Wrap** is current → already clean. Proceed to Step 4 below.
+3. [ ] After any reset, refresh the page. Confirm the stepper now shows **Step 1 / Wrap** as current.
+4. [ ] In the "Your private state" sidebar, all four rows should show `0.00 cUSDC` (or `0.00 gvSHARE` for the last one). If any row says `read failed` or shows a non-zero amount you didn't intend, click **Refresh** in the sidebar; if it persists, hard-refresh the page (Cmd+Shift+R).
+5. [ ] Click **Wrap to cUSDC** with `100` as the amount. Confirm 3 MetaMask popups in sequence (mint → approve → wrap). Wait for the toast `"Wrapped — 100 mUSDC → encrypted cUSDC"`.
+6. [ ] After the wrap completes, the stepper should now show **Step 2 / Request** as current, with **Wrap ✓** checked. cUSDC balance row reads `100.00 cUSDC`.
+7. [ ] **STOP. This is your recording start state.** Do not click anything else. Open QuickTime / OBS, set up the side-by-side layout, and start recording.
+
+If at any point the stepper jumps to an unexpected step after a click, that means leftover state is still present — go back to step 2 of this list and reclaim/reset until the stepper lands cleanly on Wrap. The skipAutoAdvance fix in commit `92ead2a` makes Wrap respect your click intent, but a half-finished prior submitDeposit (pending state on chain that the operator didn't auto-process) still needs to be cleared manually.
+
+---
+
 **Vercel + APIs:**
 - [ ] Vercel preview URL live (`groundvault-app.vercel.app`) with `CHAINGPT_API_KEY` + `FRED_API_KEY` server-side, `VITE_ALLOW_DEMO_BYPASSES=1` set
 - [ ] ChainGPT credits topped up (1k trial credits added 2026-04-28; verify a test regenerate succeeds via `/api/chaingpt` before recording)
 
-**Wallet pre-state — CRITICAL (do all of these before opening QuickTime):**
+**Wallet baseline (verify these once, separately from Step 0 above):**
 - [ ] MetaMask configured with the deployer wallet (`0x9Fba…676f15`) on Arbitrum Sepolia
 - [ ] At least 0.05 Sepolia ETH in the wallet for gas (5+ regenerates worth)
-- [ ] **Wallet already connected** to `https://groundvault-app.vercel.app` — do not record the connect-wallet flow
-- [ ] **Identity already verified** on the deployer wallet via `/verify` (skip the verify flow in the demo; mention it verbally during the Solution beat)
-- [ ] **100 cUSDC already wrapped** (mint mUSDC → approve → wrap, all done off-screen). The demo opens at the "Request" step on `/deposit`, not "Wrap"
-- [ ] **No pending or claimable deposit** on the demo wallet (run a claim of any leftover state before recording)
+- [ ] Identity already verified on the deployer wallet via `/verify` — the verify flow is skipped in the recording; reference it verbally during the Solution beat instead
 
 **MetaMask behavior:**
 - [ ] MetaMask "auto-confirm" / "fast confirm" disabled — every popup must require an explicit click so the camera catches the rhythm
