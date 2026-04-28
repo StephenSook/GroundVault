@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useBalance } from "wagmi";
 import {
   AlertCircle,
@@ -52,11 +52,20 @@ export function PreflightPanel() {
   const allOk = checks.every((c) => c.state === "ok");
   const anyFail = checks.some((c) => c.state === "fail");
   const [open, setOpen] = useState(true);
+  const autoCollapsedRef = useRef(false);
 
-  // Auto-collapse default once everything is green; a user toggle wins
-  // once they interact, but on first reach-all-green this folds the panel
-  // out of the way so the deposit form gets primary focus.
-  const effectiveOpen = open && !allOk ? true : open && allOk ? false : open;
+  // One-shot auto-collapse: the very first time `allOk` becomes true,
+  // collapse the panel so the deposit form gets primary focus. After
+  // that the user's clicks own the open/closed state — which fixes
+  // the prior bug where the user toggle was always overridden by the
+  // derived open logic and clicking a green panel did
+  // nothing.
+  useEffect(() => {
+    if (allOk && !autoCollapsedRef.current) {
+      setOpen(false);
+      autoCollapsedRef.current = true;
+    }
+  }, [allOk]);
 
   return (
     <div
@@ -80,14 +89,14 @@ export function PreflightPanel() {
             {checks.filter((c) => c.state === "ok").length}/{checks.length} ready
           </span>
         </div>
-        {effectiveOpen ? (
+        {open ? (
           <ChevronUp className="h-4 w-4 text-muted-foreground" />
         ) : (
           <ChevronDown className="h-4 w-4 text-muted-foreground" />
         )}
       </button>
 
-      {effectiveOpen && (
+      {open && (
         <ul className="border-t border-border/60 px-5 py-3 space-y-2.5">
           {checks.map((c) => (
             <li key={c.label} className="flex items-start gap-2.5 text-sm">
