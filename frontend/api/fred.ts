@@ -30,7 +30,14 @@ const ALLOWED_HOST_REGEX = /^frontend-[a-z0-9]+-ssookra-7703s-projects\.vercel\.
 
 function isAllowedOrigin(req: Request): boolean {
   const origin = req.headers.get("origin");
-  if (!origin) return false;
+  // Browsers omit `Origin` on same-origin GET requests but always set
+  // `Sec-Fetch-Site: same-origin`. That header is a forbidden header
+  // name — page JS cannot forge it via fetch() — so trusting it as
+  // same-origin proof is safe. Fixes the 403 "origin not allowed" the
+  // browser hits on `/api/fred?seriesId=DGS10` despite being same-site.
+  if (!origin) {
+    return req.headers.get("sec-fetch-site") === "same-origin";
+  }
   let url: URL;
   try {
     url = new URL(origin);

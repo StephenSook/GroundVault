@@ -111,30 +111,43 @@ async function callDirect(
     );
   }
 
-  const res = await fetch(ENDPOINT, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "general_assistant",
-      question: buildPrompt(opportunity, context),
-      chatHistory: "off",
-    }),
-  });
+  // Without a timeout, a stuck SSE stream from ChainGPT hangs the
+  // regenerate spinner forever (no auto-abort on fetch). Cap at 90s —
+  // generous for institutional memo generation (10-30s typical) and
+  // short enough that the user sees the fallback memo instead of an
+  // infinite "Calling ChainGPT" state. Aborting also propagates to
+  // res.text() body reading on modern browsers.
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 90_000);
+  try {
+    const res = await fetch(ENDPOINT, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "general_assistant",
+        question: buildPrompt(opportunity, context),
+        chatHistory: "off",
+      }),
+      signal: controller.signal,
+    });
 
-  if (!res.ok) {
-    const errText = await res.text().catch(() => "<unreadable>");
-    throw new Error(`ChainGPT HTTP ${res.status}: ${errText.slice(0, 200)}`);
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "<unreadable>");
+      throw new Error(`ChainGPT HTTP ${res.status}: ${errText.slice(0, 200)}`);
+    }
+
+    const raw = await res.text();
+    return raw
+      .split("\n")
+      .map((line) => (line.startsWith("data:") ? line.slice(5).trimStart() : line))
+      .join("\n")
+      .trim();
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const raw = await res.text();
-  return raw
-    .split("\n")
-    .map((line) => (line.startsWith("data:") ? line.slice(5).trimStart() : line))
-    .join("\n")
-    .trim();
 }
 
 /**
