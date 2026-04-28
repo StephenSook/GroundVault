@@ -253,29 +253,53 @@ export async function generateMemo(
   opportunity: Parameters<typeof buildPrompt>[0],
   context: Parameters<typeof buildPrompt>[1],
 ): Promise<{ markdown: string; hash: `0x${string}`; source: "chaingpt" | "fallback" }> {
-  // Server proxy first (production path). Direct fallback for `vite dev`
-  // where /api/chaingpt is not served. If both ChainGPT paths fail with
-  // a soft error the caller can still anchor a fallback memo.
+  // Two-tier ChainGPT degradation:
+  //   tier 1: server proxy at /api/chaingpt (key stays server-side)
+  //   tier 2: direct browser → ChainGPT (covers Cloudflare WAF blocking
+  //           Vercel edge IPs — the case where the proxy returns 502
+  //           "ChainGPT upstream HTTP 403" with a Cloudflare HTML body)
+  //   tier 3: local fallback memo with on-chain anchor (preserves the
+  //           integrity story even if both ChainGPT paths fail)
+  let markdown: string | null = null;
+  let lastErr: unknown = null;
+
   try {
     const proxied = await callServerProxy(opportunity, context);
-    const markdown = proxied ?? (await callDirect(opportunity, context));
+    if (proxied !== null) markdown = proxied;
+  } catch (err) {
+    lastErr = err;
+    // Only swallow recoverable errors here. A non-recoverable proxy
+    // error (auth misconfig, etc) should surface — direct won't fix it.
+    if (!shouldFallback(err)) throw err;
+  }
+
+  // markdown is null when proxy returned null (vite dev SPA fallback)
+  // OR threw a recoverable error (5xx including the Cloudflare-blocked
+  // 502). Try the direct browser → ChainGPT path before giving up.
+  if (markdown === null) {
+    try {
+      markdown = await callDirect(opportunity, context);
+    } catch (err) {
+      lastErr = err;
+      if (!shouldFallback(err)) throw err;
+    }
+  }
+
+  if (markdown !== null) {
     return {
       markdown,
       hash: keccak256(toUtf8Bytes(markdown)) as `0x${string}`,
       source: "chaingpt",
     };
-  } catch (err) {
-    if (!shouldFallback(err)) throw err;
-    // Log the original error before degrading so a demo recording or
-    // post-hoc review can tell what triggered the fallback. Without
-    // this line a flaky network blip and a real ChainGPT outage look
-    // identical from the screen capture.
-    console.error("ChainGPT call failed — using fallback memo:", err);
-    const markdown = buildFallbackMemo(opportunity, context);
-    return {
-      markdown,
-      hash: keccak256(toUtf8Bytes(markdown)) as `0x${string}`,
-      source: "fallback",
-    };
   }
+
+  // Both ChainGPT paths failed with recoverable errors. Anchor the
+  // local fallback so the audit-trail story still demonstrates.
+  console.error("ChainGPT proxy + direct both failed — using fallback memo:", lastErr);
+  const fallback = buildFallbackMemo(opportunity, context);
+  return {
+    markdown: fallback,
+    hash: keccak256(toUtf8Bytes(fallback)) as `0x${string}`,
+    source: "fallback",
+  };
 }
