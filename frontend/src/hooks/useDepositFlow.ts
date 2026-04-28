@@ -132,6 +132,16 @@ export function useDepositFlow() {
         setStep("pending");
       } else if (cusdcRes.value > 0n) {
         setStep("request");
+      } else if (sharesRes.value > 0n) {
+        // Post-claim sticky: the user has minted shares but no active
+        // deposit in flight. Without this branch the auto-advance falls
+        // to "wrap" and the screen visually regresses to step 1 right
+        // after a successful claim — exactly the moment the demo wants
+        // to land triumphantly. Keeping them on "claim" preserves the
+        // post-deposit impact summary card. The reset button on
+        // StepClaim still moves them forward to "wrap" manually when
+        // they want to start a new deposit.
+        setStep("claim");
       } else {
         setStep("wrap");
       }
