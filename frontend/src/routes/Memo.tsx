@@ -157,31 +157,33 @@ export default function Memo() {
       // Pinning step is stubbed — for the demo we anchor the hash with
       // either an empty memoUri (live ChainGPT memo, body would be
       // pinned to IPFS in prod) or the literal "fallback" marker
-      // (local fallback memo, body stashed to localStorage so the
-      // Provenance panel can re-render and verify on a subsequent
-      // page load). A production deployment would replace both with
-      // a real IPFS cid.
+      // (local fallback memo). A production deployment would replace
+      // both with a real IPFS cid.
+      //
+      // The body itself lives in this client's localStorage for BOTH
+      // sources, under a unified key. Without this, a page refresh
+      // (or any later useImpactMemo re-run) sees memoUri="" for live
+      // ChainGPT memos, has no body to fetch, falls back to the hard-
+      // coded placeholder, and Provenance panel raises a tamper alert
+      // because keccak(placeholder) != the on-chain hash. The unified
+      // key lets both paths re-render the body and verify cleanly.
       const memoUri = result.source === "fallback" ? "fallback" : "";
-      if (result.source === "fallback") {
-        try {
-          window.localStorage.setItem(
-            `groundvault-fallback-memo:${numericId}`,
-            result.markdown,
-          );
-        } catch (e) {
-          // localStorage quota-full or private-mode browser. The hash
-          // would still anchor on chain, but the body would be lost
-          // and ProvenancePanel would later read "tamper alert"
-          // because keccak(empty) != on-chain hash. Surface this as a
-          // visible warning so the operator can decide whether to
-          // proceed or abort.
-          console.warn("Could not stash fallback memo body in localStorage:", e);
-          toast({
-            title: "Fallback memo body could not be saved",
-            description:
-              "Browser storage rejected the write. The on-chain hash will still anchor, but Provenance verification on a future page load will read as tampered.",
-          });
-        }
+      try {
+        window.localStorage.setItem(
+          `groundvault-memo-body:${numericId}`,
+          result.markdown,
+        );
+      } catch (e) {
+        // localStorage quota-full or private-mode browser. The hash
+        // still anchors on chain, but the body is lost — Provenance
+        // will read as tampered on a future page load. Surface so the
+        // operator can decide whether to proceed.
+        console.warn("Could not stash memo body in localStorage:", e);
+        toast({
+          title: "Memo body could not be saved locally",
+          description:
+            "Browser storage rejected the write. The on-chain hash anchored successfully, but Provenance verification on a future page load will read as tampered until the body is regenerated.",
+        });
       }
       setRegenStep("anchoring");
       const overrides = await bumpedGasOverrides();
@@ -190,6 +192,13 @@ export default function Memo() {
       await tx.wait();
       setRegenStep("done");
       success = true;
+      // Re-trigger useImpactMemo so the Provenance panel picks up the
+      // freshly-anchored hash and re-reads the body we just stashed in
+      // localStorage. Without this, the panel keeps showing whatever
+      // hash was returned at page mount until the user refreshes —
+      // which is exactly the post-regenerate "Tamper alert" UX bug
+      // since the chain advances but the panel state does not.
+      retryMemo();
       const sourceLabel =
         result.source === "fallback"
           ? "fallback memo (ChainGPT unavailable)"

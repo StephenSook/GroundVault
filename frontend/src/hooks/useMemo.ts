@@ -25,20 +25,30 @@ const FALLBACK: ImpactMemo = {
 };
 
 async function fetchMemoBody(memoUri: string, opportunityId: number): Promise<string | null> {
-  if (!memoUri) return null;
-  // The "fallback" sentinel marks an on-chain anchor over the local
-  // fallback memo (ChainGPT was unavailable at generation). The body
-  // was stashed to localStorage by Memo.regenerate; re-read it here so
-  // the Provenance panel can render the body and verify the hash. If
-  // the operator wallet has cleared its storage or moved machines,
-  // localStorage will not have the body and we render the badge with
-  // a "body unavailable" note.
-  if (memoUri === "fallback") {
+  // Both empty memoUri (live ChainGPT memo, body would be IPFS-pinned
+  // in production) and the "fallback" sentinel (local fallback memo,
+  // ChainGPT unavailable) mean the body lives in this client's
+  // localStorage rather than at a fetchable URL. Memo.regenerate
+  // writes to the unified key for both sources so the Provenance
+  // panel can re-render the body and verify the keccak after a
+  // refresh. Without this, real ChainGPT memos appear to vanish
+  // post-refresh because the chain reader has no body to fetch.
+  if (!memoUri || memoUri === "fallback") {
     try {
-      return window.localStorage.getItem(`groundvault-fallback-memo:${opportunityId}`);
-    } catch {
-      return null;
+      const body = window.localStorage.getItem(`groundvault-memo-body:${opportunityId}`);
+      if (body) return body;
+    } catch {}
+    // Backward-compat for fallback memos written before the unified
+    // key existed. New writes go to groundvault-memo-body; reads
+    // first try that key, then this legacy key, then give up.
+    if (memoUri === "fallback") {
+      try {
+        return window.localStorage.getItem(`groundvault-fallback-memo:${opportunityId}`);
+      } catch {
+        return null;
+      }
     }
+    return null;
   }
   try {
     const url = memoUri.startsWith("ipfs://")
