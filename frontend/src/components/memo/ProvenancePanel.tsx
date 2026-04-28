@@ -2,6 +2,7 @@ import {
   AlertTriangle,
   Clock,
   ExternalLink,
+  FileCode,
   FileWarning,
   HelpCircle,
   ShieldCheck,
@@ -10,6 +11,7 @@ import type { MemoProvenance } from "@/types";
 import { Button } from "@/components/ui/button";
 import { useContracts } from "@/hooks/useContracts";
 import { Jargon } from "@/components/shared/Jargon";
+import { githubSourceUrl } from "@/lib/contractLinks";
 
 const ZERO_HASH = "0x" + "0".repeat(64);
 const HASH_SHAPE = /^0x[0-9a-f]{64}$/;
@@ -125,11 +127,27 @@ export function ProvenancePanel({ provenance }: { provenance: MemoProvenance }) 
         </div>
       </div>
 
-      <Button asChild variant="outline" className="w-full">
-        <a href={arbiscanUrl} target="_blank" rel="noopener noreferrer">
-          View on Arbiscan <ExternalLink className="h-3.5 w-3.5" />
-        </a>
-      </Button>
+      <div className="grid grid-cols-2 gap-2">
+        <Button asChild variant="outline" size="sm">
+          <a href={arbiscanUrl} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="h-3.5 w-3.5" /> Arbiscan
+          </a>
+        </Button>
+        <Button asChild variant="outline" size="sm">
+          <a
+            href={githubSourceUrl("GroundVaultRegistry")}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <FileCode className="h-3.5 w-3.5" /> Source
+          </a>
+        </Button>
+      </div>
+      <p className="text-[10px] text-muted-foreground leading-relaxed">
+        Arbiscan shows the deployed bytecode and read/write surface. Source
+        opens the verified Solidity in the GitHub repo — what the bytes
+        actually do.
+      </p>
     </aside>
   );
 }

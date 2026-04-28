@@ -1,5 +1,6 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, FileCode } from "lucide-react";
 import { useContracts } from "@/hooks/useContracts";
+import { githubSourceUrl } from "@/lib/contractLinks";
 
 const REPO_URL = "https://github.com/StephenSook/GroundVault";
 const ARBISCAN_BASE = "https://sepolia.arbiscan.io/address/";
@@ -51,14 +52,25 @@ export function Footer() {
             <li>
               <span className="text-muted-foreground">Registry:</span>{" "}
               {hasValidRegistry ? (
-                <a
-                  href={`${ARBISCAN_BASE}${registryAddr}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline-offset-2 hover:text-forest hover:underline"
-                >
-                  {registryAddr.slice(0, 8)}…{registryAddr.slice(-6)}
-                </a>
+                <>
+                  <a
+                    href={`${ARBISCAN_BASE}${registryAddr}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline-offset-2 hover:text-forest hover:underline"
+                  >
+                    {registryAddr.slice(0, 8)}…{registryAddr.slice(-6)}
+                  </a>
+                  <a
+                    href={githubSourceUrl("GroundVaultRegistry")}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="View Solidity source on GitHub"
+                    className="ml-2 inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-forest"
+                  >
+                    <FileCode className="h-3 w-3" /> source
+                  </a>
+                </>
               ) : (
                 <span className="text-muted-foreground/60">resolving…</span>
               )}
