@@ -35,6 +35,13 @@ export function useDepositFlow() {
   const [refreshing, setRefreshing] = useState(false);
   const [amount, setAmount] = useState<number>(50);
   const [error, setError] = useState<string | null>(null);
+  // Local "you just claimed in this session" flag. Set inside the
+  // claim handler after tx.wait() resolves; consumed by the stepIndex
+  // compute as a balance-decrypt-independent path to lighting all
+  // four stepper ticks. Survives the Nox decrypt outage that would
+  // otherwise leave shareBalance === null and prevent the
+  // balance-based post-claim sticky check from firing.
+  const [justClaimed, setJustClaimed] = useState(false);
 
   const [cusdcBalance, setCusdcBalance] = useState<bigint | null>(null);
   const [pendingDeposit, setPendingDeposit] = useState<bigint | null>(null);
@@ -299,10 +306,12 @@ export function useDepositFlow() {
       const tx = await contracts.vault.claimDeposit(overrides);
       await tx.wait();
       toast({ title: "Shares claimed", description: "Encrypted vault shares minted" });
+      setJustClaimed(true);
       // Skip auto-advance — step stays on "claim" (it was already
-      // "claim" before this handler ran); the stepIndex compute
-      // detects the post-claim sticky state from shareBalance > 0
-      // with every other balance at 0 and lights up all four ticks.
+      // "claim" before this handler ran); the stepIndex compute uses
+      // either justClaimed (works immediately) or the balance-based
+      // post-claim check (works on refresh-after-claim) to light up
+      // all four stepper ticks.
       await refresh({ skipAutoAdvance: true });
     } catch (err: any) {
       console.error(err);
@@ -316,6 +325,7 @@ export function useDepositFlow() {
   const reset = useCallback(() => {
     setStep("wrap");
     setError(null);
+    setJustClaimed(false);
   }, []);
 
   // After a successful claim, every balance returns to zero except
@@ -328,13 +338,22 @@ export function useDepositFlow() {
   // for every step. Detection: shareBalance > 0 AND every active-flow
   // balance is zero — distinguishes "just claimed" from "claim is the
   // active step because there's a claimable handle on chain."
+  // Post-claim sticky has two paths to "all four ticks lit":
+  //  (a) justClaimed — local flag set by the claim handler after
+  //      tx.wait(). Works the moment the claim succeeds, no balance
+  //      decrypt needed. Survives a Nox decrypt outage that would
+  //      otherwise leave (b) stuck on null balances.
+  //  (b) Balance-based detection — shares > 0 AND every active-flow
+  //      balance at 0. Used on refresh-after-claim (page reload, new
+  //      session) when balance reads succeed.
   const isPostClaimComplete =
     step === "claim" &&
-    shareBalance !== null &&
-    shareBalance > 0n &&
-    cusdcBalance === 0n &&
-    pendingDeposit === 0n &&
-    claimableDeposit === 0n;
+    (justClaimed ||
+      (shareBalance !== null &&
+        shareBalance > 0n &&
+        cusdcBalance === 0n &&
+        pendingDeposit === 0n &&
+        claimableDeposit === 0n));
   const stepIndex = isPostClaimComplete ? ORDER.length : ORDER.indexOf(step);
 
   return {

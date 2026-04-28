@@ -53,13 +53,15 @@ function isTransient(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err ?? "");
   if (PERMANENT_PATTERNS.some((p) => p.test(msg))) return false;
   if (TRANSIENT_PATTERNS.some((p) => p.test(msg))) return true;
-  // Default: fail fast on unclassified errors. The previous default
-  // was retry-on-unknown, but that burned hundreds of ms per failed
-  // call when the SDK introduced a new error shape we hadn't matched
-  // yet. The known-transient list covers the actual Nox testnet
-  // flakiness (network/timeout/5xx). Anything else surfaces in the UI
-  // immediately so the user can see what's wrong.
-  return false;
+  // Default: retry on unclassified errors. The argument for fail-fast
+  // (don't burn 800ms on permanent errors) loses to the argument for
+  // retry-on-unknown when the testnet is going through a migration
+  // (iExec SGX → TDX cutover on 2026-04-28 broke decrypt paths with
+  // error shapes that didn't match either pattern list). 800ms of
+  // wasted latency on a truly permanent error is annoying; an
+  // un-retried demo failure during a sponsor migration window is
+  // demo-fatal. Bias toward resilience.
+  return true;
 }
 
 async function withRetry<T>(
