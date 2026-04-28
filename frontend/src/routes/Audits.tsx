@@ -79,7 +79,7 @@ export default function Audits() {
 
       <section className="space-y-4">
         <div className="flex items-baseline justify-between">
-          <h2 className="font-display text-2xl text-forest">Per-contract reports</h2>
+          <h2 className="font-display text-2xl text-forest heading-accent">Per-contract reports</h2>
           <a
             href={README_URL}
             target="_blank"

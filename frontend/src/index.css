@@ -112,6 +112,26 @@
   }
 }
 
+@layer components {
+  /* Short sage underline applied to selected section headings. Adds
+     subtle visual rhythm without resorting to a full-width border that
+     would compete with the existing card-edge geometry. Apply on
+     opt-in only — not every h2 wants it. */
+  .heading-accent {
+    position: relative;
+    padding-bottom: 0.5rem;
+  }
+  .heading-accent::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 2.5rem;
+    height: 1px;
+    background-color: hsl(var(--sage));
+  }
+}
+
 /* Print stylesheet — used when an operator clicks "Download PDF" on
    the Memo screen and the browser opens its Save-as-PDF dialog.
    Strips the dapp chrome (banner, top-nav, footer, fixed bars) so

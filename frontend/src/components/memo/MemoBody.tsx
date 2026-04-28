@@ -10,7 +10,7 @@ export function MemoBody({ memo }: { memo: ImpactMemo }) {
       </header>
       {memo.sections.map((s, sectionIdx) => (
         <section key={s.title} className="space-y-3">
-          <h2 className="font-display text-2xl text-forest border-b border-border pb-2">{s.title}</h2>
+          <h2 className="font-display text-2xl text-forest heading-accent">{s.title}</h2>
           {s.body.split("\n\n").map((p, i) => (
             <p
               key={i}

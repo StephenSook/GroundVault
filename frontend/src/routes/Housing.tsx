@@ -29,7 +29,7 @@ export default function Housing() {
 
       <section>
         <div className="flex items-baseline justify-between mb-4">
-          <h2 className="font-display text-2xl text-forest">Pipeline (illustrative)</h2>
+          <h2 className="font-display text-2xl text-forest heading-accent">Pipeline (illustrative)</h2>
           <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
             post-hackathon roadmap
           </span>
