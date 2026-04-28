@@ -33,12 +33,22 @@ interface CtxShape {
   treasuryRatePct: number | null;
 }
 
-// Origin allowlist for the proxy. The deployed Vercel preview matches
-// `*.vercel.app`; localhost is allowed so `vercel dev` can call the
-// proxy from the local app. A custom domain can be added at deploy
-// time via the ALLOWED_ORIGIN env var.
-const ALLOWED_HOST_SUFFIXES = [".vercel.app"];
-const ALLOWED_HOSTNAMES = new Set(["localhost"]);
+// Origin allowlist for the proxy. Originally `*.vercel.app` to allow
+// preview-deploy aliases, but that lets ANY Vercel-hosted site (a
+// random side project at `attacker.vercel.app`) burn ChainGPT credits
+// by calling this endpoint. Tightened to:
+//   - exact-match GroundVault aliases (4 of them)
+//   - the per-deploy URL pattern `frontend-<hash>-ssookra-7703s-projects.vercel.app`
+//   - localhost for dev
+// Additional custom-domain origins can be added via ALLOWED_ORIGIN env var.
+const ALLOWED_EXACT_HOSTS = new Set([
+  "groundvault-app.vercel.app",
+  "groundvault-clt.vercel.app",
+  "groundvault-iexec.vercel.app",
+  "groundvault-housing.vercel.app",
+  "localhost",
+]);
+const ALLOWED_HOST_REGEX = /^frontend-[a-z0-9]+-ssookra-7703s-projects\.vercel\.app$/i;
 
 function isAllowedOrigin(req: Request): boolean {
   const origin = req.headers.get("origin");
@@ -49,8 +59,8 @@ function isAllowedOrigin(req: Request): boolean {
   } catch {
     return false;
   }
-  if (ALLOWED_HOSTNAMES.has(url.hostname)) return true;
-  if (ALLOWED_HOST_SUFFIXES.some((s) => url.hostname.endsWith(s))) return true;
+  if (ALLOWED_EXACT_HOSTS.has(url.hostname)) return true;
+  if (ALLOWED_HOST_REGEX.test(url.hostname)) return true;
   const extra = (globalThis as any).process?.env?.ALLOWED_ORIGIN as string | undefined;
   if (extra && origin === extra) return true;
   return false;
@@ -126,7 +136,12 @@ export default async function handler(req: Request): Promise<Response> {
 
   const apiKey = (globalThis as any).process?.env?.CHAINGPT_API_KEY as string | undefined;
   if (!apiKey) {
-    return jsonResponse(500, { error: "CHAINGPT_API_KEY not configured on the server" });
+    // Generic 5xx body — the specific cause (missing env var) is in
+    // the server-side console only. Don't announce env var names to
+    // anonymous callers who are probably probing for misconfigured
+    // deployments.
+    console.error("[/api/chaingpt] CHAINGPT_API_KEY not set");
+    return jsonResponse(500, { error: "service unavailable" });
   }
 
   let body: unknown;

@@ -17,8 +17,16 @@ const FRED_BASE = "https://api.stlouisfed.org/fred/series/observations";
 // inputs through to the upstream.
 const VALID_SERIES = /^[A-Za-z0-9]{2,16}$/;
 
-const ALLOWED_HOST_SUFFIXES = [".vercel.app"];
-const ALLOWED_HOSTNAMES = new Set(["localhost"]);
+// Same exact-match origin allowlist as /api/chaingpt — `*.vercel.app`
+// is too broad and would let any Vercel-hosted site call this proxy.
+const ALLOWED_EXACT_HOSTS = new Set([
+  "groundvault-app.vercel.app",
+  "groundvault-clt.vercel.app",
+  "groundvault-iexec.vercel.app",
+  "groundvault-housing.vercel.app",
+  "localhost",
+]);
+const ALLOWED_HOST_REGEX = /^frontend-[a-z0-9]+-ssookra-7703s-projects\.vercel\.app$/i;
 
 function isAllowedOrigin(req: Request): boolean {
   const origin = req.headers.get("origin");
@@ -29,8 +37,8 @@ function isAllowedOrigin(req: Request): boolean {
   } catch {
     return false;
   }
-  if (ALLOWED_HOSTNAMES.has(url.hostname)) return true;
-  if (ALLOWED_HOST_SUFFIXES.some((s) => url.hostname.endsWith(s))) return true;
+  if (ALLOWED_EXACT_HOSTS.has(url.hostname)) return true;
+  if (ALLOWED_HOST_REGEX.test(url.hostname)) return true;
   const extra = (globalThis as any).process?.env?.ALLOWED_ORIGIN as string | undefined;
   if (extra && origin === extra) return true;
   return false;
@@ -54,7 +62,8 @@ export default async function handler(req: Request): Promise<Response> {
 
   const apiKey = (globalThis as any).process?.env?.FRED_API_KEY as string | undefined;
   if (!apiKey) {
-    return jsonResponse(500, { error: "FRED_API_KEY not configured on the server" });
+    console.error("[/api/fred] FRED_API_KEY not set");
+    return jsonResponse(500, { error: "service unavailable" });
   }
 
   const url = new URL(req.url);
