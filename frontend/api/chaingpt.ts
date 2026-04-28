@@ -160,6 +160,13 @@ export default async function handler(req: Request): Promise<Response> {
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
+      // ChainGPT's API sits behind Cloudflare bot management. Without
+      // an explicit User-Agent the edge gateway returns "Attention
+      // Required!" interstitials (HTTP 403) before the request ever
+      // reaches the auth layer. A clear product-identifying UA passes
+      // the heuristic and lets the bearer token authenticate normally.
+      "User-Agent": "GroundVault/1.0 (+https://groundvault-app.vercel.app)",
+      Accept: "application/json, text/event-stream",
     },
     body: JSON.stringify({
       model: "general_assistant",
