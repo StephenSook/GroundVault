@@ -53,11 +53,20 @@ This is the hero shot. Two windows side by side.
 **LEFT WINDOW** (Arbiscan, `https://sepolia.arbiscan.io/address/<cUSDC>` — pre-loaded to a recent confidentialTransfer tx).
 **RIGHT WINDOW** (deployed dapp, on `/deposit`).
 
-**1:40 — 1:55 · Wrap (15s)**
-On the right: click **Wrap to cUSDC**. MetaMask pops mint → approve → wrap. Three transactions land. The "cUSDC balance" row in the sidebar fills in with a sage pulsing dot next to a bytes32 prefix; the decrypted value (50.00 cUSDC) shows because the demo wallet has the ACL.
+**1:40 — 1:55 · Private state ready (15s)**
+On the right: scroll the eye to the **"Your private state"** sidebar on `/deposit`. The page is pre-loaded with **100 cUSDC already wrapped** (done off-screen before recording — see the shot list below). The "cUSDC balance" row shows a sage pulsing dot next to a bytes32 prefix; the decrypted value (100.00 cUSDC) only resolves because the demo wallet has the Nox ACL grant.
+
+> "100 cUSDC pre-wrapped before this recording. To the public chain reader, that row is bytes. To the investor — and only the investor — the value resolves to real dollars."
 
 **1:55 — 2:25 · Submit deposit (30s)**
-Click **Submit deposit** (still 50 mUSDC). MetaMask pops twice (encrypted transfer + recordDeposit). Show the **stepper animating** through Wrap ✓ → Request → Pending. Operator auto-process advances pending → claim. Stepper now ✓✓✓→ Claim.
+Click **Submit deposit** (50 cUSDC). MetaMask pops three times in sequence:
+1. Encrypted transfer to the vault
+2. recordDeposit on GroundVaultCore
+3. processDeposit (operator auto-advance — the demo wallet holds OPERATOR_ROLE)
+
+> ⚠️ **Pause ~1 second between confirms.** Auto-process fires fast; if you slam through MetaMask the stepper blows past Pending before the camera catches it.
+
+The stepper animates Wrap ✓ → Request ✓ → Pending ✓ → Claim with the active state pulsing on Claim.
 
 Cut to the **Privacy Proof drawer** at the bottom of the page. Read the line:
 > "Public chain view: function call + bytes32 handle. Your view via Nox ACL: 50 cUSDC."
@@ -65,7 +74,7 @@ Cut to the **Privacy Proof drawer** at the bottom of the page. Read the line:
 Tab to the LEFT window — Arbiscan shows the same `confidentialTransfer(address,bytes)` call with an opaque bytes payload. **Same tx hash, same block, two completely different visibilities.**
 
 **2:25 — 2:45 · Claim (20s)**
-Right window: click **Claim GVT shares**. One MetaMask tx. The **post-deposit impact summary** card appears: "Your impact share: 0.02% of 960 Lawton St SW. Pooled with other investors, this commits real capital to permanent affordability for an Atlanta CLT family. The covenant on the deed prevents speculative resale."
+Right window: click **Claim GVT shares**. One MetaMask tx. The fourth stepper tick fills in (Wrap ✓ Request ✓ Pending ✓ Claim ✓ — all four green). The **post-deposit impact summary** card replaces the claim form: "Your impact share: 0.02% of 960 Lawton St SW. Pooled with other investors, this commits real capital to permanent affordability for an Atlanta CLT family. The covenant on the deed prevents speculative resale."
 
 **2:45 — 3:10 · Memo regenerate (25s)**
 Navigate to `/housing/1/memo`. Pause on the "Awaiting on-chain anchor" amber Provenance badge. Click **Regenerate memo with ChainGPT**.
@@ -104,15 +113,34 @@ If the demo runs short, hold on the housing dashboard for the last 10 seconds wi
 
 ## Shot list — pre-recording checklist
 
-- [ ] Vercel preview URL live with `CHAINGPT_API_KEY` + `FRED_API_KEY` server-side, `VITE_ALLOW_DEMO_BYPASSES=1` set
-- [ ] ChainGPT credits topped up
+**Vercel + APIs:**
+- [ ] Vercel preview URL live (`groundvault-app.vercel.app`) with `CHAINGPT_API_KEY` + `FRED_API_KEY` server-side, `VITE_ALLOW_DEMO_BYPASSES=1` set
+- [ ] ChainGPT credits topped up (1k trial credits added 2026-04-28; verify a test regenerate succeeds via `/api/chaingpt` before recording)
+
+**Wallet pre-state — CRITICAL (do all of these before opening QuickTime):**
 - [ ] MetaMask configured with the deployer wallet (`0x9Fba…676f15`) on Arbitrum Sepolia
 - [ ] At least 0.05 Sepolia ETH in the wallet for gas (5+ regenerates worth)
-- [ ] 200+ mUSDC pre-wrapped (to avoid the 3-tx wrap dance during recording — use the existing balance instead)
-- [ ] Demo banner dismissed (or kept visible — operator's call)
-- [ ] Two browser windows: Arbiscan tab pre-loaded to a confidentialTransfer tx, dapp tab pre-loaded to `/housing`
+- [ ] **Wallet already connected** to `https://groundvault-app.vercel.app` — do not record the connect-wallet flow
+- [ ] **Identity already verified** on the deployer wallet via `/verify` (skip the verify flow in the demo; mention it verbally during the Solution beat)
+- [ ] **100 cUSDC already wrapped** (mint mUSDC → approve → wrap, all done off-screen). The demo opens at the "Request" step on `/deposit`, not "Wrap"
+- [ ] **No pending or claimable deposit** on the demo wallet (run a claim of any leftover state before recording)
+
+**MetaMask behavior:**
+- [ ] MetaMask "auto-confirm" / "fast confirm" disabled — every popup must require an explicit click so the camera catches the rhythm
+- [ ] Pause ~1 second between confirms during the Submit-deposit beat — auto-process fires fast and will skip Pending visually if you slam through
+
+**Browser layout:**
+- [ ] Demo banner visible (reinforces the Reg D 506(c) framing for free; small enough to not dominate)
+- [ ] Two browser windows: Arbiscan tab pre-loaded to a recent `confidentialTransfer` tx on the cUSDC contract, dapp tab pre-loaded to `/housing`
 - [ ] OS-level window split (Cmd+arrow on macOS, snap on Windows) at the screen-ratio that works for the recorder
+- [ ] Hard-refresh both tabs once before recording so caches are warm but no stale state lingers
+
+**Rehearsal:**
+- [ ] One full dry run end-to-end before the take, watching for Nox API flakiness (the retry-with-backoff covers most blips, but a sustained outage would force a restart)
 - [ ] Audio test — voiceover gain set, no background noise
+
+**Contingency:**
+- [ ] Mock-mode URL ready as a fallback if the live wallet flow breaks: `?wallet=mock&status=verified` renders all four screens with synthetic state. Does NOT have real tx hashes, so the Privacy Proof drawer becomes weaker — use only as last-resort insurance.
 
 ## Recording tools
 
