@@ -179,8 +179,8 @@ export default function Deposit() {
             />
           </div>
           <button
-            onClick={flow.refresh}
-            disabled={flow.refreshing}
+            onClick={() => flow.refresh()}
+            disabled={flow.refreshing || flow.busy}
             className="mt-5 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-forest disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {flow.refreshing ? (
