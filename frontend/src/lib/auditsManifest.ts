@@ -9,7 +9,14 @@
 
 import type { ContractName } from "@/lib/contracts";
 
-const RAW_AUDITS = import.meta.glob("../../../audits/*.md", {
+// Audit markdown is mirrored from <repo>/audits/ into src/data/audits/
+// by scripts/sync-audits.mjs (run as part of dev / build via package.json).
+// The mirror is gitignored — source-of-truth stays at repo root.
+// Globbing inside the Vite project root (frontend/) is what makes the
+// production bundle actually include the markdown; pointing the glob
+// at "../../../audits/*.md" resolved to nothing in Vercel's build
+// container and left RAW_AUDITS empty.
+const RAW_AUDITS = import.meta.glob("../data/audits/*.md", {
   query: "?raw",
   import: "default",
   eager: true,
