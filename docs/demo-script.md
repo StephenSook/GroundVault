@@ -125,7 +125,7 @@ If the demo runs short, hold on the housing dashboard for the last 10 seconds wi
 
 ## Key URLs
 
-- **Live deployment:** _set after Vercel preview is up_
+- **Live deployment:** https://groundvault-app.vercel.app
 - **GitHub:** https://github.com/StephenSook/GroundVault
 - **Audits:** https://github.com/StephenSook/GroundVault/tree/main/audits
 - **Citations:** https://github.com/StephenSook/GroundVault/blob/main/docs/citations.md

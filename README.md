@@ -23,7 +23,7 @@ The privacy primitive is the entire point. CLTs in cities like Atlanta have lost
 
 | | |
 |---|---|
-| **Deployed dapp** | _set after Vercel preview is up — see `docs/demo-script.md` for the recording plan_ |
+| **Deployed dapp** | [groundvault-app.vercel.app](https://groundvault-app.vercel.app) (Arbitrum Sepolia) |
 | **Registry contract** | [`0x8D008Fd6c2CCE89A59D50aF08e1DAFCE39cb283b`](https://sepolia.arbiscan.io/address/0x8D008Fd6c2CCE89A59D50aF08e1DAFCE39cb283b) on Arbitrum Sepolia |
 | **All 11 contracts** | [`deployments/arbitrumSepolia.json`](./deployments/arbitrumSepolia.json) — every contract source-verified on Arbiscan |
 | **Audit reports** | [`audits/`](./audits/README.md) — ChainGPT Smart Contract Auditor, 10/11 contracts (Router deferred on credit cap) |
