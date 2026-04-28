@@ -227,16 +227,58 @@ function PrivateRow({
         <span className="text-muted-foreground">{label}</span>
         <EncryptedValue
           handle={handle}
-          decrypted={error ? "read failed" : decrypted}
+          // Use em-dash on error rather than "read failed" — the row
+          // then reads as "value pending" instead of "everything is
+          // broken." The details disclosure below carries the error
+          // story.
+          decrypted={error ? "—" : decrypted}
           authorized={authorized}
           variant="inline"
         />
       </div>
-      {error && (
-        <div className="text-[10px] text-destructive/80 font-mono break-all pl-1">
-          {error.length > 120 ? `${error.slice(0, 120)}…` : error}
-        </div>
-      )}
+      {error && <DecryptErrorDetails raw={error} />}
     </div>
+  );
+}
+
+interface ErrorClassification {
+  friendly: string;
+  tone: "warning" | "destructive";
+}
+
+// Maps a raw SDK error string to a user-friendly summary + tone.
+// The classification is best-effort — when the message doesn't match
+// any known pattern, we default to "transient + Refresh to retry"
+// because that's the right action for the vast majority of cases.
+function classifyDecryptError(raw: string): ErrorClassification {
+  if (/network request failed|fetch failed|timeout|timed out|econn|socket hang up|\b(502|503|504)\b/i.test(raw)) {
+    return { friendly: "Nox temporary read issue — Refresh to retry.", tone: "warning" };
+  }
+  if (/unauthorized|forbidden|\bacl\b|permission denied|\b(401|403)\b/i.test(raw)) {
+    return { friendly: "ACL denied — connect with the wallet that holds decrypt permission.", tone: "destructive" };
+  }
+  if (/not init|sdk not init/i.test(raw)) {
+    return { friendly: "Wallet handle SDK not ready — reconnect to rebuild it.", tone: "warning" };
+  }
+  if (/malformed|invalid handle|\b404\b/i.test(raw)) {
+    return { friendly: "Handle not found — refresh after the next confirmed block.", tone: "destructive" };
+  }
+  return { friendly: "Decrypt failed — Refresh to retry.", tone: "warning" };
+}
+
+function DecryptErrorDetails({ raw }: { raw: string }) {
+  const { friendly, tone } = classifyDecryptError(raw);
+  const toneClass = tone === "destructive" ? "text-destructive" : "text-warning";
+  const truncated = raw.length > 200 ? `${raw.slice(0, 200)}…` : raw;
+  return (
+    <details className="pl-1 group">
+      <summary className={`text-[10px] ${toneClass} cursor-pointer list-none flex items-center gap-1.5`}>
+        <span>{friendly}</span>
+        <span className="text-muted-foreground/70 underline-offset-2 group-hover:underline">technical details</span>
+      </summary>
+      <div className="text-[10px] text-muted-foreground/70 font-mono break-all mt-1 leading-snug">
+        {truncated}
+      </div>
+    </details>
   );
 }
