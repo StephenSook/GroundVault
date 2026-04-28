@@ -13,6 +13,7 @@ import { StepPending } from "@/components/deposit/StepPending";
 import { StepClaim } from "@/components/deposit/StepClaim";
 import { PrivacyProofDrawer } from "@/components/deposit/PrivacyProofDrawer";
 import { ActivityLog } from "@/components/deposit/ActivityLog";
+import { PreflightPanel } from "@/components/deposit/PreflightPanel";
 import { EncryptedValue } from "@/components/shared/EncryptedValue";
 
 const SIX_DECIMALS = 1_000_000n;
@@ -103,6 +104,8 @@ export default function Deposit() {
           </div>
         </div>
       )}
+
+      <PreflightPanel />
 
       <Stepper order={flow.order} currentIndex={flow.stepIndex} />
 
