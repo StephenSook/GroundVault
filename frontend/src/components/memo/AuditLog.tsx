@@ -29,7 +29,18 @@ function relativeTime(unixSec: number): string {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
-export function AuditLog({ opportunityId }: { opportunityId: number }) {
+export function AuditLog({
+  opportunityId,
+  refreshKey = 0,
+}: {
+  opportunityId: number;
+  // Bump from the parent (e.g. Memo.regenerate after tx.wait()) to force
+  // a re-query of MemoUpdated events. Without this, the audit log shows
+  // the events present at component mount only, which means a fresh
+  // regenerate done after page load never appears here until the user
+  // navigates away and back.
+  refreshKey?: number;
+}) {
   const { housingRegistry } = useContracts();
   const [events, setEvents] = useState<MemoUpdate[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +88,7 @@ export function AuditLog({ opportunityId }: { opportunityId: number }) {
     return () => {
       cancelled = true;
     };
-  }, [opportunityId, housingRegistry]);
+  }, [opportunityId, housingRegistry, refreshKey]);
 
   return (
     <div className="rounded-lg border border-border bg-card p-6 mt-8">

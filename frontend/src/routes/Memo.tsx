@@ -95,6 +95,10 @@ export default function Memo() {
     };
   }, []);
   const [busy, setBusy] = useState(false);
+  // Bumped after each successful regenerate to force AuditLog to re-query
+  // MemoUpdated events. Without this, the audit log stays frozen on its
+  // mount-time result and the freshly-anchored regen never appears.
+  const [auditRefreshKey, setAuditRefreshKey] = useState(0);
 
   const numericId = id ? Number(id) : 1;
   const breadcrumbAddress = opp?.address ?? "Loading…";
@@ -199,6 +203,10 @@ export default function Memo() {
       // which is exactly the post-regenerate "Tamper alert" UX bug
       // since the chain advances but the panel state does not.
       retryMemo();
+      // Same idea for the on-chain audit log: AuditLog's useEffect deps
+      // don't change post-regenerate, so without an explicit bump the
+      // newly-emitted MemoUpdated event never shows up.
+      setAuditRefreshKey((k) => k + 1);
       const sourceLabel =
         result.source === "fallback"
           ? "fallback memo (ChainGPT unavailable)"
@@ -325,7 +333,7 @@ export default function Memo() {
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
         <div className="space-y-8">
           {memo ? <MemoBody memo={memo} /> : <div />}
-          <AuditLog opportunityId={numericId} />
+          <AuditLog opportunityId={numericId} refreshKey={auditRefreshKey} />
           <CitationsPanel />
         </div>
         {memo?.provenance ? (
