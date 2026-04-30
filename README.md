@@ -27,6 +27,7 @@ The privacy primitive is the entire point. CLTs in cities like Atlanta have lost
 | **Deployed dapp** | [groundvault-app.vercel.app](https://groundvault-app.vercel.app) (Arbitrum Sepolia) |
 | **Demo video** | [4-minute walkthrough](https://youtu.be/S2SGKafsxLc) on YouTube |
 | **Submission post** | [@steve_social_ on X](https://x.com/steve_social_/status/2049922873419038732) — tagging [@iEx_ec](https://x.com/iEx_ec) and [@Chain_GPT](https://x.com/Chain_GPT) |
+| **DoraHacks BUIDL** | [BUIDL #43623](https://dorahacks.io/buidl/43623) on the iExec Vibe Coding Challenge page |
 | **Registry contract** | [`0x8D008Fd6c2CCE89A59D50aF08e1DAFCE39cb283b`](https://sepolia.arbiscan.io/address/0x8D008Fd6c2CCE89A59D50aF08e1DAFCE39cb283b) on Arbitrum Sepolia |
 | **All 11 contracts** | [`deployments/arbitrumSepolia.json`](./deployments/arbitrumSepolia.json) — every contract source-verified on Arbiscan |
 | **Audit reports** | [`audits/`](./audits/README.md) — ChainGPT Smart Contract Auditor, 10/11 contracts (Router deferred on credit cap) |
