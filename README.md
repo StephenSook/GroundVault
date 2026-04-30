@@ -6,7 +6,7 @@
 [![Chain](https://img.shields.io/badge/chain-Arbitrum%20Sepolia%20(421614)-1f3a2a)](https://sepolia.arbiscan.io/address/0x8D008Fd6c2CCE89A59D50aF08e1DAFCE39cb283b)
 [![Standards](https://img.shields.io/badge/ERC--7984%20·%20ERC--3643%20·%20ERC--7540-7d9b7e)](#architecture)
 [![Audits](https://img.shields.io/badge/audits-10%2F11%20contracts-7d9b7e)](./audits/README.md)
-[![Tests](https://img.shields.io/badge/tests-152%20passing-1f3a2a)](#tests)
+[![Tests](https://img.shields.io/badge/tests-158%20passing-1f3a2a)](#tests)
 [![License](https://img.shields.io/badge/license-MIT-1f3a2a)](./LICENSE)
 
 iExec Vibe Coding Challenge submission · Reg D 506(c) testnet prototype · No real funds at risk.
@@ -113,7 +113,7 @@ Public chain readers see opaque handles. ACL holders (the depositor + the share 
 
 ## Tests
 
-152 unit tests on the local Hardhat network plus a live end-to-end integration test against the deployed Arbitrum Sepolia contracts. Run from the repo root:
+158 unit tests on the local Hardhat network plus a live end-to-end integration test against the deployed Arbitrum Sepolia contracts. Run from the repo root:
 
 ```bash
 nvm use                 # Node 20 from .nvmrc
@@ -121,7 +121,7 @@ npm install
 cp .env.example .env    # fill PRIVATE_KEY, ARBITRUM_SEPOLIA_RPC_URL, ARBISCAN_API_KEY,
                         # CHAINGPT_API_KEY, FRED_API_KEY, HUD_CHAS_TOKEN
 npx hardhat compile
-npx hardhat test                                                            # 152 unit tests
+npx hardhat test                                                            # 158 unit tests
 npx hardhat test test/integration/end-to-end.integration.js \
     --network arbitrumSepolia                                               # live e2e
 ```
