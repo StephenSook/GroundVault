@@ -3,6 +3,7 @@
 > Confidential capital for Community Land Trusts.
 > Private investor positions on a public chain — built on iExec Nox + ERC-7984.
 
+[![Submitted](https://img.shields.io/badge/iExec_Vibe_Coding-Submitted-7d9b7e)](https://x.com/steve_social_/status/2049922873419038732)
 [![Chain](https://img.shields.io/badge/chain-Arbitrum%20Sepolia%20(421614)-1f3a2a)](https://sepolia.arbiscan.io/address/0x8D008Fd6c2CCE89A59D50aF08e1DAFCE39cb283b)
 [![Standards](https://img.shields.io/badge/ERC--7984%20·%20ERC--3643%20·%20ERC--7540-7d9b7e)](#architecture)
 [![Audits](https://img.shields.io/badge/audits-10%2F11%20contracts-7d9b7e)](./audits/README.md)
@@ -24,6 +25,8 @@ The privacy primitive is the entire point. CLTs in cities like Atlanta have lost
 | | |
 |---|---|
 | **Deployed dapp** | [groundvault-app.vercel.app](https://groundvault-app.vercel.app) (Arbitrum Sepolia) |
+| **Demo video** | [4-minute walkthrough](https://youtu.be/S2SGKafsxLc) on YouTube |
+| **Submission post** | [@steve_social_ on X](https://x.com/steve_social_/status/2049922873419038732) — tagging [@iEx_ec](https://x.com/iEx_ec) and [@Chain_GPT](https://x.com/Chain_GPT) |
 | **Registry contract** | [`0x8D008Fd6c2CCE89A59D50aF08e1DAFCE39cb283b`](https://sepolia.arbiscan.io/address/0x8D008Fd6c2CCE89A59D50aF08e1DAFCE39cb283b) on Arbitrum Sepolia |
 | **All 11 contracts** | [`deployments/arbitrumSepolia.json`](./deployments/arbitrumSepolia.json) — every contract source-verified on Arbiscan |
 | **Audit reports** | [`audits/`](./audits/README.md) — ChainGPT Smart Contract Auditor, 10/11 contracts (Router deferred on credit cap) |
