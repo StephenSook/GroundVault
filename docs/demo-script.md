@@ -81,7 +81,7 @@ Navigate to `/housing/1/memo`. Pause on the "Awaiting on-chain anchor" amber Pro
 
 The **RegenerateProgress** card walks through: Fetching HUD CHAS + FRED → Calling ChainGPT → Submitting setMemo tx → Awaiting block confirmation → On-chain hash anchored.
 
-Reload the page. The Provenance badge flips from amber to green: **"Green Integrity Verified — On-chain hash matches the keccak256 of the rendered memo body exactly."**
+The Provenance badge flips from amber to green automatically as soon as the tx confirms: **"Green Integrity Verified — On-chain hash matches the keccak256 of the rendered memo body exactly."** No reload — the panel re-reads the chain state and the body from localStorage on its own.
 
 Scroll to the **Audit log** section below the memo body. The new regenerate appears at the top of the timeline with a sage dot.
 

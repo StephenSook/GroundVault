@@ -173,7 +173,7 @@ sequenceDiagram
 
 ### Why a custom queue (not vanilla ERC-7540)
 
-ERC-7540 specifies async deposit/redemption requests in `uint256`. ERC-7984 stores balances as `bytes32` encrypted handles. The two types do not compose: a literal ERC-7540 implementation would have to decrypt every queued amount on chain, which defeats confidentiality. `GroundVaultCore` keeps the lifecycle (PENDING → CLAIMABLE → CLAIMED) but operates entirely on bytes32 handles. `cancelDepositTimeout` is stubbed for Phase 2.6 trust hardening.
+ERC-7540 specifies async deposit/redemption requests in `uint256`. ERC-7984 stores balances as `bytes32` encrypted handles. The two types do not compose: a literal ERC-7540 implementation would have to decrypt every queued amount on chain, which defeats confidentiality. `GroundVaultCore` keeps the lifecycle (PENDING → CLAIMABLE → CLAIMED) but operates entirely on bytes32 handles.
 
 ### Frontend
 
