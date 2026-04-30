@@ -70,23 +70,49 @@ const STEM_TO_CONTRACT: Record<string, ContractName | null> = {
 const SEVERITY_HEADER =
   /^#{2,4}\s+(?:\d+\.\s+)?\*{0,2}(Critical|High|Medium|Low|Informational)(?:\s+(?:Severity\s+)?(?:Issues?|Findings?))?\*{0,2}\s*$/gim;
 
-// Bullet whose title is bold text. Accepts dash, asterisk, OR numeric
-// prefix because Identity.md uses `1. **Title**` while every other file
-// uses `- **Title**`. The negative lookahead skips "None" /
-// "None Identified" placeholders that the auditor uses to denote "no
-// findings in this severity" — those would otherwise count as 1.
-const FINDING_BULLET = /^(?:[-*]|\d+\.)\s+\*\*(?!None\b|N\/A\b)[^*]+?\*\*/gm;
+// Captures the bolded title from a finding bullet. Accepts dash, asterisk,
+// OR numeric prefix because Identity.md uses `1. **Title**` while every
+// other file uses `- **Title**`. Placeholder filtering happens via
+// isPlaceholderTitle in JS so both parseSeverityCounts and parseTopCritical
+// share a single source of truth for what counts as a "real" finding.
+const FINDING_BULLET_TITLE = /^(?:[-*]|\d+\.)\s+\*\*([^*]+?)\*\*/gm;
 
-function parseSeverityCounts(body: string): Record<Severity, number> {
-  const sectionRanges: { sev: Severity; start: number; end: number }[] = [];
+// Matches the "no findings here" placeholder titles the auditor uses for
+// empty severity sections. Without this, parseSeverityCounts double-counts
+// bullets like
+//   - **None**                                (ClaimTopicsRegistry/Critical)
+//   - **No Critical Vulnerabilities Found.**  (GroundVaultRegistry/Critical)
+// as if they were real findings, and parseTopCritical surfaces them as the
+// card subhead. The previous implementation only filtered "None" / "N/A"
+// in the regex, missed the "No <severity> <noun>" variant, and used a
+// separate non-section-bounded regex for parseTopCritical that leaked
+// past empty Critical sections into the High section's first bullet.
+const PLACEHOLDER_TITLE =
+  /^(?:None|N\/A|Nothing|Not\s+Identified|No\s+(?:Critical|High|Medium|Low|Informational)?\s*(?:Vulnerabilit\w*|Issues?|Findings?|Risks?|Concerns?|Bugs?|Errors?))\b/i;
+
+function isPlaceholderTitle(title: string): boolean {
+  return PLACEHOLDER_TITLE.test(title.trim());
+}
+
+interface SeveritySection {
+  sev: Severity;
+  slice: string;
+}
+
+function getSeveritySections(body: string): SeveritySection[] {
   const matches = Array.from(body.matchAll(SEVERITY_HEADER));
+  const sections: SeveritySection[] = [];
   for (let i = 0; i < matches.length; i += 1) {
     const m = matches[i];
     const sev = m[1].toLowerCase() as Severity;
     const start = (m.index ?? 0) + m[0].length;
     const end = i + 1 < matches.length ? (matches[i + 1].index ?? body.length) : body.length;
-    sectionRanges.push({ sev, start, end });
+    sections.push({ sev, slice: body.slice(start, end) });
   }
+  return sections;
+}
+
+function parseSeverityCounts(body: string): Record<Severity, number> {
   const counts: Record<Severity, number> = {
     critical: 0,
     high: 0,
@@ -94,20 +120,25 @@ function parseSeverityCounts(body: string): Record<Severity, number> {
     low: 0,
     informational: 0,
   };
-  for (const { sev, start, end } of sectionRanges) {
-    const slice = body.slice(start, end);
-    counts[sev] += Array.from(slice.matchAll(FINDING_BULLET)).length;
+  for (const { sev, slice } of getSeveritySections(body)) {
+    for (const m of slice.matchAll(FINDING_BULLET_TITLE)) {
+      if (!isPlaceholderTitle(m[1])) counts[sev] += 1;
+    }
   }
   return counts;
 }
 
 function parseTopCritical(body: string): string | null {
-  const idx = body.search(/####\s+\*\*Critical\*\*/i);
-  if (idx < 0) return null;
-  // Look for the first bullet starting `- **<title>**:` after the Critical header.
-  const after = body.slice(idx);
-  const bulletMatch = after.match(/-\s+\*\*([^*]+?)\*\*\s*:/);
-  return bulletMatch ? bulletMatch[1].trim() : null;
+  for (const { sev, slice } of getSeveritySections(body)) {
+    if (sev !== "critical") continue;
+    for (const m of slice.matchAll(FINDING_BULLET_TITLE)) {
+      // Strip a trailing colon and whitespace; some bullets read
+      // "**Title**: description" while others are bare "**Title**".
+      const title = m[1].trim().replace(/:\s*$/, "");
+      if (!isPlaceholderTitle(title)) return title;
+    }
+  }
+  return null;
 }
 
 function parseHeaderField(body: string, label: string): string | null {
