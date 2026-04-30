@@ -232,6 +232,14 @@ Outputs go to `deployments/arbitrumSepolia.json`, which is the single source of 
 - **TEE = hardware-trust model**, not trustless. Frame as _auditable confidentiality_ — what a public chain reader cannot decrypt, a predator bot cannot front-run, but the steward (and a regulator with the right ACL) still can.
 - **The CLT thesis is the point.** Tokenized RWA volume on public chains is ~$35.9B as of Nov 2025; $0 of it is permanent-affordability housing. The privacy primitive is the missing piece, not the marketing.
 
+## Build cadence
+
+5-day timeline visualized with [Gource](https://gource.io/) — 164 commits across 230 files, single contributor, color-matched to the rest of the brand. The day-by-day commit pattern (7 / 81 / 57 / 15 / 4) tells the build arc on its own: scaffold day, contract sprint, deploy + verify, integrations + frontend, demo polish.
+
+[![GroundVault commit history time-lapse](docs/gource-preview.gif)](docs/gource.mp4)
+
+[▶ Watch the full 36s render](docs/gource.mp4)
+
 ## Repo layout
 
 ```
