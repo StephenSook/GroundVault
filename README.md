@@ -93,6 +93,84 @@ flowchart TB
 
 Headline contracts (highlighted): **GroundVaultToken**, **GroundVaultCore**, **GroundVaultRegistry**.
 
+### Memo regenerate provenance flow
+
+How `/housing/:id/memo` produces a real ChainGPT memo with a verifiable on-chain hash, end to end:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Op as Memo bot operator
+    participant UI as GroundVault UI
+    participant HUD as HUD CHAS
+    participant FRED as FRED
+    participant Proxy as /api/chaingpt (Vercel Edge)
+    participant CG as ChainGPT LLM
+    participant Reg as GroundVaultRegistry
+    participant LS as Browser localStorage
+
+    Op->>UI: click Regenerate memo
+    par live data
+        UI->>HUD: GET ?stateId=13&entityId=121
+        HUD-->>UI: A17 / D8 / D5 → 23% severely cost-burdened
+    and
+        UI->>FRED: GET ?seriesId=DGS10
+        FRED-->>UI: 4.36% (10-yr US Treasury)
+    end
+    UI->>Proxy: POST opportunity + context
+    alt proxy reaches ChainGPT
+        Proxy->>CG: POST /chat/stream
+        CG-->>Proxy: streaming markdown
+        Proxy-->>UI: { markdown }
+    else Cloudflare gate blocks Vercel edge IPs
+        UI->>CG: POST /chat/stream (browser-direct fallback)
+        CG-->>UI: streaming markdown
+    end
+    UI->>UI: keccak256(markdown) = 0xb128…
+    UI->>LS: stash markdown body for refresh-survival
+    UI->>Reg: setMemo(opportunityId, hash, "")
+    Reg-->>UI: tx confirmed (block 263998435)
+    UI->>UI: re-read chain hash + LS body, recompute keccak
+    Note over UI: keccak match → Provenance flips green Verified ✓
+```
+
+Tier 3 (local fallback memo with on-chain anchor) preserves the integrity story even if both ChainGPT paths fail — the body is hand-built from live HUD/FRED data, hashed, and anchored, with the Provenance card flipping amber instead of green.
+
+### Confidential deposit lifecycle
+
+What `/deposit` actually moves on chain — every state transition operates on bytes32 encrypted handles, never plaintext amounts:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Inv as Verified investor
+    participant cUSDC as cUSDC (ERC-7984)
+    participant Nox as iExec Nox TEE
+    participant Core as GroundVaultCore (async queue)
+    participant GVT as GroundVaultToken
+    actor Op as Operator
+
+    Note over Inv,Op: PENDING — confidential deposit submitted
+    Inv->>cUSDC: wrap(amount) [amount visible — last public step]
+    cUSDC->>Nox: encrypt(amount)
+    Nox-->>cUSDC: bytes32 handle
+    Inv->>cUSDC: confidentialTransfer(Core, handle)
+    Inv->>Core: recordDeposit(handle, ticketId)
+
+    Note over Inv,Op: CLAIMABLE — operator advances queue
+    Op->>Core: processDeposit(ticketId)
+    Core->>GVT: mint share handle to investor
+    Core->>Nox: persist ACL grant to share token
+
+    Note over Inv,Op: CLAIMED — investor takes shares
+    Inv->>Core: claimDeposit(ticketId)
+    Core->>GVT: transfer share handle to investor
+
+    Note right of Op: Public chain reader sees only<br/>bytes32 handles after wrap.<br/>ACL holders (depositor, share token,<br/>operator) see decrypted dollars via Nox.
+```
+
+`cancelDepositTimeout` is stubbed for Phase 2.6 trust hardening — see `GroundVaultCore.sol` NatSpec for the threat model.
+
 ### Why a custom queue (not vanilla ERC-7540)
 
 ERC-7540 specifies async deposit/redemption requests in `uint256`. ERC-7984 stores balances as `bytes32` encrypted handles. The two types do not compose: a literal ERC-7540 implementation would have to decrypt every queued amount on chain, which defeats confidentiality. `GroundVaultCore` keeps the lifecycle (PENDING → CLAIMABLE → CLAIMED) but operates entirely on bytes32 handles. `cancelDepositTimeout` is stubbed for Phase 2.6 trust hardening.
