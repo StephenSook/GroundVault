@@ -5,7 +5,15 @@
 // missing or the request fails (so the demo still renders without keys).
 //
 // Spec: https://www.huduser.gov/portal/dataset/chas-api.html
-// Data field: D9 -- Cost Burden >50% Total (severely cost-burdened share).
+// CHAS Table 3 (county Sum) renter-occupied cost-burden field codes —
+// confirmed against the live API response for Fulton County, GA:
+//   A17 = total renter-occupied housing units
+//   D8  = renter households with severe cost burden (>50% of income)
+//   D5  = renter households with moderate cost burden (30%-50%)
+// An earlier version of this client read `B5C_est` / `B5C` etc., which
+// don't exist in the API response — the parser silently returned 0%
+// severely cost-burdened with source="live", and the LLM-generated
+// memo faithfully reported the wrong number.
 
 export interface CostBurdenBreakdown {
   severelyBurdenedPct: number; // > 50% of income on housing
@@ -42,21 +50,32 @@ export async function fetchCostBurden(countyFips: string = "13121"): Promise<Cos
     }
     const json = await res.json();
 
-    // The CHAS payload has dozens of fields; we read the renter-household
-    // cost-burden tier shares (D9 family). The exact field names follow
-    // the HUD documentation.
+    // The CHAS payload has 132 letter-number coded fields per row. We
+    // read the renter cost-burden trio (A17 / D8 / D5).
     const row = Array.isArray(json) ? json[0] : json;
     if (!row) {
       console.warn("HUD CHAS: empty response — falling back to static numbers");
       return FALLBACK;
     }
 
-    const totalRenters = Number(row.B5_est ?? row.B5 ?? 0);
-    const severelyBurdenedRenters = Number(row.B5C_est ?? row.B5C ?? 0);
-    const moderatelyBurdenedRenters = Number(row.B5B_est ?? row.B5B ?? 0);
-    if (!totalRenters || totalRenters <= 0) {
+    const totalRenters = Number(row.A17);
+    const severelyBurdenedRenters = Number(row.D8);
+    const moderatelyBurdenedRenters = Number(row.D5);
+    if (!Number.isFinite(totalRenters) || totalRenters <= 0) {
       console.warn(
-        "HUD CHAS: B5/B5_est missing or zero — payload shape may have changed; falling back to static numbers",
+        "HUD CHAS: A17 missing or zero — payload shape may have changed; falling back to static numbers",
+      );
+      return FALLBACK;
+    }
+    // Defensive: if the renter total is non-zero but BOTH burden tiers
+    // are zero, the field mapping is almost certainly stale (real
+    // Atlanta-sized counties always have non-trivial cost-burdened
+    // renter populations). Better to fall back than ship a memo
+    // claiming "0% severely cost-burdened" — that exact failure mode
+    // is what the original client did with its B5C_est/B5C codes.
+    if (severelyBurdenedRenters <= 0 && moderatelyBurdenedRenters <= 0) {
+      console.warn(
+        "HUD CHAS: both burden tiers zero with non-zero renter total — falling back",
       );
       return FALLBACK;
     }
